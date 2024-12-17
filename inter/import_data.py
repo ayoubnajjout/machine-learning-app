@@ -176,11 +176,42 @@ def display_dataset_info():
         except Exception as e:
             st.error(f"Erreur lors de la détection des outliers : {e}")
 
+
+    # Option pour détecter les outliers dans toutes les colonnes numériques
+    if 1 == 1:
+        st.subheader("Détection des Outliers dans toutes les colonnes numériques")
+        outliers_info = {}
+
+        try:
+            for column in numeric_columns:
+                # Calcul des outliers pour chaque colonne
+                Q1 = dataset[column].quantile(0.25)
+                Q3 = dataset[column].quantile(0.75)
+                IQR = Q3 - Q1
+                lower_bound = Q1 - 1.5 * IQR
+                upper_bound = Q3 + 1.5 * IQR
+                outliers = dataset[(dataset[column] < lower_bound) | (dataset[column] > upper_bound)]
+
+                # Sauvegarder les résultats dans un dictionnaire
+                outliers_info[column] = len(outliers)
+
+            # Afficher les résultats dans un tableau
+            st.write("**Résumé des outliers détectés pour chaque colonne :**")
+            outliers_summary = pd.DataFrame({
+                "Colonne": numeric_columns,
+                "Nombre d'outliers": [outliers_info[col] for col in numeric_columns]
+            })
+            st.dataframe(outliers_summary)
+
+        except Exception as e:
+            st.error(f"Erreur lors de la détection des outliers : {e}")
+
+
     # Vérification de l'équilibre
     st.subheader("Vérification de l'équilibre des colonnes catégoriques")
     balance_column = st.selectbox(
         "Sélectionnez une colonne pour vérifier l'équilibre :",
-        options=["Choisissez une option"] + categorical_columns,  # Ajouter une option par défaut
+        options=["Choisissez une option"] + categorical_columns + numeric_columns,  # Ajouter une option par défaut
         index=0
     )
 
