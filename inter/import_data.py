@@ -171,6 +171,11 @@ def display_dataset_info():
             st.write(f"**Nombre d'outliers détectés dans la colonne {outlier_column} :** {len(outliers)}")
             if not outliers.empty:
                 st.dataframe(outliers)
+                # Visualisation des outliers
+                fig, ax = plt.subplots(figsize=(8, 6))
+                ax.boxplot(dataset[outlier_column].dropna(), vert=False)
+                ax.set_title(f"Boxplot pour détecter les outliers dans la colonne {outlier_column}")
+                st.pyplot(fig)
             else:
                 st.success(f"Aucun outlier détecté dans la colonne {outlier_column}.")
         except Exception as e:

@@ -1,6 +1,11 @@
 import streamlit as st
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, LabelEncoder
+from imblearn.over_sampling import SMOTE
+import pandas as pd
+import numpy as np
+import streamlit as st
+from io import BytesIO
 
 # Fonction pour gérer les valeurs manquantes
 def handle_missing_values(data: pd.DataFrame):
@@ -17,7 +22,7 @@ def handle_missing_values(data: pd.DataFrame):
 
     # Afficher uniquement les colonnes avec des valeurs manquantes
     missing_cols = missing_data[missing_data > 0]
-    st.dataframe(missing_cols, use_container_width=True)
+    st.dataframe(missing_cols, use_container_width=True, key="missing_cols_df")
 
     st.subheader("Options pour gérer les valeurs manquantes")
     
@@ -73,7 +78,7 @@ def handle_missing_values(data: pd.DataFrame):
 
         # Afficher un aperçu des données après le traitement
         st.subheader("Aperçu des données après traitement")
-        st.dataframe(data.head())
+        st.dataframe(data.head(), key="missing_values_preview")
 
 
 # Fonction pour normaliser ou standardiser les données, avec exclusions de certaines colonnes
@@ -144,7 +149,7 @@ def normalize_or_standardize(data: pd.DataFrame, target_col: str = None):
             
             # Afficher un aperçu des données après transformation
             st.subheader("Aperçu des données après transformation")
-            st.dataframe(data[cols_to_transform].head())
+            st.dataframe(data[cols_to_transform].head(), key="normalized_preview")
         else:
             st.info("Cliquez sur 'Appliquer la transformation' pour effectuer l'opération.")
         
@@ -161,19 +166,31 @@ def encode_categorical_columns(data: pd.DataFrame):
     if len(categorical_cols) > 0:
         st.write("Colonnes catégoriques disponibles :", categorical_cols.tolist())
         
-        # Demander à l'utilisateur de sélectionner les colonnes à encoder
-        selected_cols = st.multiselect("Sélectionner les colonnes à encoder :", categorical_cols.tolist())
+        # Checkbox pour encoder toutes les colonnes
+        encode_all = st.checkbox("Encoder toutes les colonnes catégoriques")
         
-        if selected_cols:
-            encoder = LabelEncoder()
-            for col in selected_cols:
-                data[col] = encoder.fit_transform(data[col])
-            st.success("Colonnes catégoriques encodées avec Label Encoding.")
-            
-            st.subheader("Aperçu des données après encodage")
-            st.dataframe(data[selected_cols].head())
+        if encode_all:
+            selected_cols = categorical_cols.tolist()
         else:
-            st.warning("Veuillez sélectionner au moins une colonne pour l'encodage.")
+            # Demander à l'utilisateur de sélectionner les colonnes à encoder
+            selected_cols = st.multiselect(
+                "Sélectionner les colonnes à encoder :", 
+                categorical_cols.tolist()
+            )
+        
+        # Bouton pour déclencher l'encodage
+        if st.button("Encoder les colonnes sélectionnées"):
+            if selected_cols:
+                encoder = LabelEncoder()
+                for col in selected_cols:
+                    data[col] = encoder.fit_transform(data[col])
+                st.success(f"Colonnes encodées : {', '.join(selected_cols)}")
+                
+                # Aperçu des données après encodage
+                st.subheader("Aperçu des données après encodage")
+                st.dataframe(data[selected_cols].head(), key="encoded_preview")
+            else:
+                st.warning("Veuillez sélectionner au moins une colonne pour l'encodage.")
     else:
         st.info("Aucune colonne catégorique disponible pour l'encodage.")
 
@@ -201,15 +218,9 @@ def delete_columns(data: pd.DataFrame):
             
             # Aperçu du dataset après suppression
             st.subheader("Aperçu des données après suppression des colonnes")
-            st.dataframe(data.head())
+            st.dataframe(data.head(), key="deleted_cols_preview")
     else:
         st.info("Aucune colonne sélectionnée pour suppression.")
-
-
-
-import pandas as pd
-import numpy as np
-import streamlit as st
 
 # # Fonction pour détecter et supprimer les outliers
 # def remove_outliers(data: pd.DataFrame):
@@ -310,13 +321,13 @@ def remove_outliers_ui(data: pd.DataFrame):
         if method == "IQR":
             if st.button("Supprimer les outliers avec la méthode IQR"):
                 updated_data = remove_outliers_iqr(data, selected_column)
-                st.session_state["dataset"] = updated_data
+                st.session_state["temp_dataset"] = updated_data
                 st.success(f"Outliers supprimés avec la méthode IQR pour la colonne {selected_column}.")
         elif method == "Z-Score":
             threshold = st.slider("Seuil de Z-Score :", 1, 5, 3)
             if st.button("Supprimer les outliers avec la méthode Z-Score"):
                 updated_data = remove_outliers_zscore(data, selected_column, threshold)
-                st.session_state["dataset"] = updated_data
+                st.session_state["temp_dataset"] = updated_data
                 st.success(f"Outliers supprimés avec la méthode Z-Score pour la colonne {selected_column}.")
 
     elif mode == "Toutes les colonnes numériques":
@@ -324,14 +335,14 @@ def remove_outliers_ui(data: pd.DataFrame):
             if st.button("Supprimer les outliers avec la méthode IQR pour toutes les colonnes numériques"):
                 for col in numeric_columns:
                     data = remove_outliers_iqr(data, col)
-                st.session_state["dataset"] = data
+                st.session_state["temp_dataset"] = data
                 st.success("Outliers supprimés avec la méthode IQR pour toutes les colonnes numériques.")
         elif method == "Z-Score":
             threshold = st.slider("Seuil de Z-Score :", 1, 5, 3)
             if st.button("Supprimer les outliers avec la méthode Z-Score pour toutes les colonnes numériques"):
                 for col in numeric_columns:
                     data = remove_outliers_zscore(data, col, threshold)
-                st.session_state["dataset"] = data
+                st.session_state["temp_dataset"] = data
                 st.success("Outliers supprimés avec la méthode Z-Score pour toutes les colonnes numériques.")
 
 
@@ -353,15 +364,13 @@ def manage_duplicates(data: pd.DataFrame):
             data.drop_duplicates(inplace=True)
 
             # Mettre à jour le dataset dans la session
-            st.session_state["dataset"] = data
+            st.session_state["temp_dataset"] = data
 
             # Afficher un message de succès
             st.success(f"{num_duplicates} doublons ont été supprimés.")
 
 
 # balance data
-from imblearn.over_sampling import SMOTE
-
 def balance_data_with_smote(data: pd.DataFrame, target_column: str):
     """
     Équilibre les classes dans le dataset en utilisant SMOTE.
@@ -400,8 +409,147 @@ def balance_data_with_smote(data: pd.DataFrame, target_column: str):
         return data
 
 
+# Fonction pour ajouter une colonne ou une ligne
+def add_column_or_row(data: pd.DataFrame):
+    st.subheader("Ajouter une Colonne ou une Ligne")
+    
+    option = st.radio("Choisissez une option :", ["Ajouter une colonne", "Ajouter une ligne"])
+    
+    if option == "Ajouter une colonne":
+        col_name = st.text_input("Nom de la nouvelle colonne")
+        if col_name and st.button("Ajouter la colonne"):
+            data[col_name] = None
+            st.session_state["temp_dataset"] = data
+            st.success(f"Colonne '{col_name}' ajoutée avec succès.")
+            st.dataframe(data.head(), key="added_col_row_preview")
+    
+    elif option == "Ajouter une ligne":
+        # Calculate rows needed
+        num_columns = len(data.columns)
+        num_rows = (num_columns + 2) // 3  # Ceiling division to handle non-divisible numbers
+        
+        new_row = {}
+        
+        # Create buttons row by row
+        for row in range(num_rows):
+            # Create 3 columns for each row
+            cols = st.columns(3)
+            
+            # Fill each column in current row
+            for col_idx in range(3):
+                # Calculate current column index
+                current_idx = row * 3 + col_idx
+                
+                # Break if we've handled all columns
+                if current_idx >= num_columns:
+                    break
+                    
+                # Get column name and create input in appropriate column
+                column_name = data.columns[current_idx]
+                if column_name == 'selected':
+                    new_row[column_name] = False
+                    continue
 
+                # Get column data type
+                col_dtype = data[column_name].dtype
+                
+                # Create appropriate input field based on data type
+                try:
+                    if np.issubdtype(col_dtype, np.number):
+                        if np.issubdtype(col_dtype, np.integer):
+                            value = cols[col_idx].number_input(
+                                f"Valeur pour {column_name} (entier)",
+                                step=1,
+                                value=0
+                            )
+                        else:
+                            value = cols[col_idx].number_input(
+                                f"Valeur pour {column_name} (décimal)",
+                                step=0.1,
+                                value=0.0
+                            )
+                    elif col_dtype == 'bool':
+                        value = cols[col_idx].checkbox(f"Valeur pour {column_name}")
+                    elif col_dtype == 'datetime64[ns]':
+                        value = cols[col_idx].date_input(f"Valeur pour {column_name}")
+                    else:
+                        value = cols[col_idx].text_input(f"Valeur pour {column_name}")
+                    
+                    new_row[column_name] = value
+                except Exception as e:
+                    st.error(f"Erreur pour la colonne {column_name}: {str(e)}")
+                    return
+        
+        if st.button("Ajouter la ligne"):
+            try:
+                # Convert the values to appropriate types
+                for col in data.columns:
+                    if col != 'selected':
+                        new_row[col] = data[col].dtype.type(new_row[col])
+                
+                # Set selected to False by default
+                if 'selected' in data.columns:
+                    new_row['selected'] = False
+                
+                data = pd.concat([data, pd.DataFrame([new_row])], ignore_index=True)
+                st.session_state["temp_dataset"] = data
+                st.success("Nouvelle ligne ajoutée avec succès.")
+                st.dataframe(data.head(), key="added_col_row_preview")
+            except Exception as e:
+                st.error(f"Erreur lors de l'ajout de la ligne: {str(e)}")
 
+def export_data(data: pd.DataFrame):
+    st.subheader("Exporter les données")
+    
+    # Drop the 'selected' column before export
+    data_to_export = data.drop(columns=['selected']) if 'selected' in data.columns else data
+    
+    # Sélection du format d'export
+    export_format = st.selectbox(
+        "Format d'export",
+        ["CSV", "Excel", "JSON"]
+    )
+    
+    try:
+        if export_format == "CSV":
+            # Export CSV
+            csv = data_to_export.to_csv(index=False)
+            b64 = BytesIO()
+            b64.write(csv.encode())
+            st.download_button(
+                label="📥 Télécharger CSV",
+                data=b64.getvalue(),
+                file_name="data_prepared.csv",
+                mime='text/csv',
+                use_container_width=True
+            )
+        
+        elif export_format == "Excel":
+            # Export Excel
+            output = BytesIO()
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                data_to_export.to_excel(writer, index=False)
+            st.download_button(
+                label="📥 Télécharger Excel",
+                data=output.getvalue(),
+                file_name="data_prepared.xlsx",
+                mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                use_container_width=True
+            )
+        
+        else:  # JSON
+            # Export JSON
+            json_str = data_to_export.to_json(orient='records')
+            st.download_button(
+                label="📥 Télécharger JSON",
+                data=json_str,
+                file_name="data_prepared.json",
+                mime='application/json',
+                use_container_width=True
+            )
+    
+    except Exception as e:
+        st.error(f"Une erreur s'est produite lors de l'export : {str(e)}")
 
 # Fonction principale pour afficher la section
 def show():
@@ -412,38 +560,85 @@ def show():
         st.warning("Veuillez importer un dataset avant de continuer.")
         return
 
-    # Récupérer le dataset depuis la session
-    data = st.session_state["dataset"]
+    # Créer une copie de travail des données
+    if "temp_dataset" not in st.session_state:
+        st.session_state["temp_dataset"] = st.session_state["dataset"].copy()
+    
+    # Utiliser temp_dataset pour toutes les modifications
+    data = st.session_state["temp_dataset"]
 
-    # Gestion des doublons
-    manage_duplicates(data)
+    # Ajouter les boutons Save/Cancel en haut de la page
 
-    # Suppression des colonnes
+    # Modification et suppression des lignes
+    st.subheader("Modification et suppression des lignes")
+    data['selected'] = False
+    
+    # ... rest of your existing code, but use 'data' instead of accessing st.session_state["dataset"] directly ...
+    # Replace all instances of st.session_state["dataset"] = ... with:
+    # st.session_state["temp_dataset"] = ...
+
+    # For example, when deleting rows:
+    unique_key = f"main_editor_{hash(str(data.shape))}"
+    edited_df = st.data_editor(
+        data,
+        key=unique_key,
+        column_config={
+            "selected": st.column_config.CheckboxColumn(
+                "Select",
+                help="Select rows to delete",
+                default=False,
+            )
+        }
+    )
+
+    if st.button("Supprimer les lignes sélectionnées", key="delete_button"):
+        filtered_data = edited_df[~edited_df['selected']]
+        st.session_state["temp_dataset"] = filtered_data
+        st.success("Les lignes sélectionnées ont été supprimées.")
+        filtered_key = f"filtered_editor_{hash(str(filtered_data.shape))}"
+        st.write("Données après suppression:")
+        st.data_editor(
+            filtered_data, 
+            key=filtered_key,
+        )
+
+    # ... continue with other functions, but make sure they modify temp_dataset instead of dataset ...
     delete_columns(data)
-
-    # Gestion des valeurs manquantes
+    add_column_or_row(data)
+    manage_duplicates(data)
     handle_missing_values(data)
-
-    # Normalisation ou standardisation
     normalize_or_standardize(data)
-
-    # Encodage des colonnes catégoriques
     encode_categorical_columns(data)
-
-    # Suppression des outliers
     remove_outliers_ui(data)
 
-    # Équilibrage des données avec SMOTE
+    # SMOTE section
     st.subheader("Équilibrage des Classes avec SMOTE")
     target_column = st.selectbox("Sélectionnez la colonne cible pour l'équilibrage (classification)", data.columns)
 
-    if st.button("Appliquer SMOTE"):
-        st.session_state["dataset"] = balance_data_with_smote(data, target_column)
+    if st.button("Appliquer SMOTE", key="apply_smote_button"):
+        st.session_state["temp_dataset"] = balance_data_with_smote(data, target_column)
 
-    # Afficher un aperçu du dataset mis à jour
+    
+    # Afficher un aperçu final
     st.write("Aperçu du dataset mis à jour :")
-    st.dataframe(st.session_state["dataset"])
+    preview_data = data.drop(columns=['selected']) if 'selected' in data.columns else data
+    st.dataframe(preview_data, key="updated_dataset_preview")
 
+    # Ajouter les boutons Save/Cancel en bas de la page aussi
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("❌ Annuler les modifications", key="cancel_bottom", type="secondary", use_container_width=True):
+            st.session_state["temp_dataset"] = st.session_state["dataset"].copy()
+            st.success("Modifications annulées!")
+            st.rerun()
+    with col2:
+        if st.button("💾 Sauvegarder les modifications", key="save_bottom", type="primary", use_container_width=True):
+            # Drop the 'selected' column before saving
+            if 'selected' in st.session_state["temp_dataset"].columns:
+                st.session_state["temp_dataset"] = st.session_state["temp_dataset"].drop(columns=['selected'])
+            
+            st.session_state["dataset"] = st.session_state["temp_dataset"].copy()
+            st.success("Modifications sauvegardées avec succès!")
 
-    # Mettre à jour le dataset dans la session après traitement
-    # st.session_state["dataset"] = data
+    export_data(data)
+
