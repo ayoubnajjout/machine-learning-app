@@ -31,6 +31,8 @@ def show():
             elif uploaded_file.name.endswith(".xlsx"):
                 st.session_state["dataset"] = pd.read_excel(uploaded_file)
 
+            st.session_state["temp_dataset"] = st.session_state["dataset"].copy()
+            st.session_state["preprocessed_dataset"] = None  # Reset preprocessed dataset
             st.success("Fichier téléchargé avec succès !")
 
         except Exception as e:
@@ -44,6 +46,8 @@ def show():
         # Bouton pour réinitialiser
         if st.button("Réinitialiser le dataset"):
             st.session_state["dataset"] = None
+            st.session_state["temp_dataset"] = None
+            st.session_state["preprocessed_dataset"] = None  # Reset preprocessed dataset
             st.warning("Dataset réinitialisé. Veuillez recharger un fichier.")
 
 def display_dataset_info():
