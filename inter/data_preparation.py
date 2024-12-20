@@ -570,61 +570,73 @@ def show():
     # Ajouter les boutons Save/Cancel en haut de la page
 
     # Modification et suppression des lignes
-    st.subheader("Modification et suppression des lignes")
-    data['selected'] = False
-    
-    # ... rest of your existing code, but use 'data' instead of accessing st.session_state["dataset"] directly ...
-    # Replace all instances of st.session_state["dataset"] = ... with:
-    # st.session_state["temp_dataset"] = ...
-
-    # For example, when deleting rows:
-    unique_key = f"main_editor_{hash(str(data.shape))}"
-    edited_df = st.data_editor(
-        data,
-        key=unique_key,
-        column_config={
-            "selected": st.column_config.CheckboxColumn(
-                "Select",
-                help="Select rows to delete",
-                default=False,
-            )
-        }
-    )
-
-    if st.button("Supprimer les lignes sélectionnées", key="delete_button"):
-        filtered_data = edited_df[~edited_df['selected']]
-        st.session_state["temp_dataset"] = filtered_data
-        st.success("Les lignes sélectionnées ont été supprimées.")
-        filtered_key = f"filtered_editor_{hash(str(filtered_data.shape))}"
-        st.write("Données après suppression:")
-        st.data_editor(
-            filtered_data, 
-            key=filtered_key,
+    with st.expander("📝 Modification et suppression des lignes"):
+        data['selected'] = False
+        unique_key = f"main_editor_{hash(str(data.shape))}"
+        edited_df = st.data_editor(
+            data,
+            key=unique_key,
+            column_config={
+                "selected": st.column_config.CheckboxColumn(
+                    "Select",
+                    help="Select rows to delete",
+                    default=False,
+                )
+            }
         )
 
-    # ... continue with other functions, but make sure they modify temp_dataset instead of dataset ...
-    delete_columns(data)
-    add_column_or_row(data)
-    manage_duplicates(data)
-    handle_missing_values(data)
-    normalize_or_standardize(data)
-    encode_categorical_columns(data)
-    remove_outliers_ui(data)
+        if st.button("Supprimer les lignes sélectionnées", key="delete_button"):
+            filtered_data = edited_df[~edited_df['selected']]
+            st.session_state["temp_dataset"] = filtered_data
+            st.success("Les lignes sélectionnées ont été supprimées.")
+            filtered_key = f"filtered_editor_{hash(str(filtered_data.shape))}"
+            st.write("Données après suppression:")
+            st.data_editor(
+                filtered_data, 
+                key=filtered_key,
+            )
 
-    # SMOTE section
-    st.subheader("Équilibrage des Classes avec SMOTE")
-    target_column = st.selectbox("Sélectionnez la colonne cible pour l'équilibrage (classification)", data.columns)
+    # Suppression de colonnes
+    with st.expander("🗑️ Suppression de colonnes"):
+        delete_columns(data)
 
-    if st.button("Appliquer SMOTE", key="apply_smote_button"):
-        st.session_state["temp_dataset"] = balance_data_with_smote(data, target_column)
+    # Ajout de colonnes ou lignes
+    with st.expander("➕ Ajout de colonnes ou lignes"):
+        add_column_or_row(data)
 
-    
-    # Afficher un aperçu final
+    # Gestion des doublons
+    with st.expander("🔄 Gestion des doublons"):
+        manage_duplicates(data)
+
+    # Gestion des valeurs manquantes
+    with st.expander("❓ Gestion des valeurs manquantes"):
+        handle_missing_values(data)
+
+    # Normalisation/Standardisation
+    with st.expander("📊 Normalisation et standardisation"):
+        normalize_or_standardize(data)
+
+    # Encodage des colonnes catégoriques
+    with st.expander("🔠 Encodage des colonnes catégoriques"):
+        encode_categorical_columns(data)
+
+    # Gestion des outliers
+    with st.expander("📉 Gestion des outliers"):
+        remove_outliers_ui(data)
+
+    # Équilibrage des classes avec SMOTE
+    with st.expander("⚖️ Équilibrage des classes avec SMOTE"):
+        target_column = st.selectbox("Sélectionnez la colonne cible pour l'équilibrage (classification)", data.columns)
+        if st.button("Appliquer SMOTE", key="apply_smote_button"):
+            st.session_state["temp_dataset"] = balance_data_with_smote(data, target_column)
+
+    # Aperçu final et export (without expander)
     st.write("Aperçu du dataset mis à jour :")
     preview_data = data.drop(columns=['selected']) if 'selected' in data.columns else data
     st.dataframe(preview_data, key="updated_dataset_preview")
+    export_data(data)
 
-    # Ajouter les boutons Save/Cancel en bas de la page aussi
+    # Boutons de sauvegarde
     col1, col2 = st.columns(2)
     with col1:
         if st.button("❌ Annuler les modifications", key="cancel_bottom", type="secondary", use_container_width=True):
@@ -639,6 +651,4 @@ def show():
             
             st.session_state["dataset"] = st.session_state["temp_dataset"].copy()
             st.success("Modifications sauvegardées avec succès!")
-
-    export_data(data)
 
