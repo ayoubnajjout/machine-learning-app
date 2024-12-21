@@ -8,7 +8,7 @@ def show():
     # Titre de la section
     st.title("Importer le Dataset")
     st.markdown("""
-    Cette section vous permet d'importer votre dataset. Veuillez télécharger un fichier au format **CSV** ou **Excel**.
+    Cette section vous permet d'importer votre dataset. Veuillez télécharger un fichier au format **CSV**, **Excel** ou **JSON**.
     Une fois le fichier chargé, son contenu sera affiché pour confirmation.
     """)
 
@@ -18,8 +18,8 @@ def show():
 
     # Zone de téléchargement
     uploaded_file = st.file_uploader(
-        label="Téléchargez votre fichier (CSV ou Excel)",
-        type=["csv", "xlsx"],
+        label="Téléchargez votre fichier (CSV, Excel ou JSON)",
+        type=["csv", "xlsx", "json"],
         help="Assurez-vous que le fichier est correctement formaté avant de l'importer."
     )
 
@@ -31,25 +31,32 @@ def show():
                 st.session_state["dataset"] = pd.read_csv(uploaded_file)
             elif uploaded_file.name.endswith(".xlsx"):
                 st.session_state["dataset"] = pd.read_excel(uploaded_file)
+            elif uploaded_file.name.endswith(".json"):
+                st.session_state["dataset"] = pd.read_json(uploaded_file)
 
+            # Make a copy of the dataset immediately
+            st.session_state["original_dataset"] = st.session_state["dataset"].copy()
             st.session_state["temp_dataset"] = st.session_state["dataset"].copy()
             st.session_state["preprocessed_dataset"] = None  # Reset preprocessed dataset
+            st.session_state["training_dataset"] = st.session_state["dataset"].copy()  # Ensure training dataset is updated
             st.success("Fichier téléchargé avec succès !")
 
         except Exception as e:
             st.error(f"Erreur lors de la lecture du fichier : {e}")
             st.session_state["dataset"] = None
 
+    # Bouton pour réinitialiser
+    if st.button("Réinitialiser le dataset"):
+        st.session_state["dataset"] = None
+        st.session_state["original_dataset"] = None
+        st.session_state["temp_dataset"] = None
+        st.session_state["preprocessed_dataset"] = None  # Reset preprocessed dataset
+        st.session_state["training_dataset"] = None  # Reset training dataset
+        st.warning("Dataset réinitialisé. Veuillez recharger un fichier.")
+
     # Affichage des informations sur le dataset (si disponible)
     if st.session_state["dataset"] is not None:
         display_dataset_info()
-
-        # Bouton pour réinitialiser
-        if st.button("Réinitialiser le dataset"):
-            st.session_state["dataset"] = None
-            st.session_state["temp_dataset"] = None
-            st.session_state["preprocessed_dataset"] = None  # Reset preprocessed dataset
-            st.warning("Dataset réinitialisé. Veuillez recharger un fichier.")
 
 def display_dataset_info():
     """Affiche les informations détaillées du dataset."""
@@ -92,20 +99,21 @@ def display_dataset_info():
     st.write("Sélectionnez les colonnes que vous souhaitez visualiser :")
     selected_columns = st.multiselect("Colonnes disponibles", options=categorical_columns + numeric_columns)
 
-        # Bouton pour afficher la Heatmap et Matrice de Corrélation
+    # Bouton pour afficher la Heatmap et Matrice de Corrélation
     st.subheader("Heatmap et Matrice de Corrélation")
     if len(numeric_columns) > 1:
-            if st.button("Afficher la Heatmap de Corrélation"):
-                try:
-                    corr_matrix = dataset[numeric_columns].corr()
-                    fig, ax = plt.subplots(figsize=(10, 8))
-                    sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', ax=ax)
-                    plt.title("Heatmap de la Matrice de Corrélation")
-                    st.pyplot(fig)
-                except Exception as e:
-                    st.error(f"Erreur lors de la création de la heatmap : {e}")
+        if st.button("Afficher la Heatmap de Corrélation"):
+            try:
+                corr_matrix = dataset[numeric_columns].corr()
+                fig, ax = plt.subplots(figsize=(10, 8))
+                sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', ax=ax)
+                plt.title("Heatmap de la Matrice de Corrélation")
+                st.pyplot(fig)
+            except Exception as e:
+                st.error(f"Erreur lors de la création de la heatmap : {e}")
     else:
-            st.info("Pas assez de colonnes numériques pour créer une heatmap.")
+        st.info("Pas assez de colonnes numériques pour créer une heatmap.")
+
     # Affichage des graphiques pour chaque colonne choisie
     for col in selected_columns:
         if col in numeric_columns:
@@ -125,7 +133,7 @@ def display_dataset_info():
             ax.set_ylabel("Fréquence")
             st.pyplot(fig)
 
-        # PARTIE 1 : Visualisation 2D - Nuage de points
+    # PARTIE 1 : Visualisation 2D - Nuage de points
     st.subheader("Visualisation 2D - Nuage de points")
     # Sélectionner les colonnes pour la partie 2D
     selected_columns1 = st.multiselect("Colonnes disponibles pour le nuage de points 2D", options=numeric_columns)
@@ -144,7 +152,6 @@ def display_dataset_info():
             st.pyplot(fig)
         except Exception as e:
             st.error(f"Erreur lors de la création du nuage de points 2D : {e}")
-
 
     # PARTIE 2 : Visualisation 3D - Nuage de points
     st.subheader("Visualisation 3D - Nuage de points")
@@ -168,6 +175,7 @@ def display_dataset_info():
             st.pyplot(fig)
         except Exception as e:
             st.error(f"Erreur lors de la création du nuage de points 3D : {e}")
+
     # Détection des outliers
     st.subheader("Détection des Outliers")
     outlier_column = st.selectbox(
@@ -200,7 +208,6 @@ def display_dataset_info():
         except Exception as e:
             st.error(f"Erreur lors de la détection des outliers : {e}")
 
-
     # Option pour détecter les outliers dans toutes les colonnes numériques
     if 1 == 1:
         st.subheader("Détection des Outliers dans toutes les colonnes numériques")
@@ -229,7 +236,6 @@ def display_dataset_info():
 
         except Exception as e:
             st.error(f"Erreur lors de la détection des outliers : {e}")
-
 
     # Vérification de l'équilibre
     st.subheader("Vérification de l'équilibre des colonnes catégoriques")

@@ -10,6 +10,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier
 # Regression models
 from sklearn.linear_model import LinearRegression, Ridge, Lasso
 from sklearn.ensemble import RandomForestRegressor
@@ -43,16 +44,19 @@ def preprocess_data(df):
         cat_imputer = SimpleImputer(strategy='most_frequent')
         df[categorical_cols] = cat_imputer.fit_transform(df[categorical_cols])
     
-    # Encode categorical variables
-    le = LabelEncoder()
-    for col in categorical_cols:
-        df[col] = le.fit_transform(df[col])
-    
     # Scale numeric features only if needed
     if df[numeric_cols].std().mean() > 1:
         scaler = StandardScaler()
         df[numeric_cols] = scaler.fit_transform(df[numeric_cols])
     
+    return df
+
+def encode_data(df):
+    """Encode categorical variables"""
+    categorical_cols = df.select_dtypes(include=['object']).columns
+    le = LabelEncoder()
+    for col in categorical_cols:
+        df[col] = le.fit_transform(df[col])
     return df
 
 def check_class_distribution(y):
@@ -108,7 +112,8 @@ def get_models(problem_type):
             "Régression Logistique": LogisticRegression(),
             "SVM": SVC(),
             "Arbre de Décision": DecisionTreeClassifier(),
-            "Random Forest": RandomForestClassifier()
+            "Random Forest": RandomForestClassifier(),
+            "KNN": KNeighborsClassifier()
         }
     else:  # regression
         return {
@@ -122,28 +127,26 @@ def show():
     st.title("Entraînement du modèle")
 
     # Check if dataset exists in session state
-    if 'dataset' not in st.session_state:
-        st.error("Veuillez d'abord charger vos données dans l'onglet 'Import'")
+    if 'dataset' not in st.session_state or st.session_state.dataset is None:
+        st.warning("Veuillez d'abord charger vos données dans l'onglet Importer les données.")
         return
     
-    # Get dataset and preprocess if not already preprocessed
-    if 'preprocessed_dataset' not in st.session_state or st.session_state["dataset"] is None:
-        with st.spinner('Prétraitement automatique des données...'):
-            st.session_state.preprocessed_dataset = preprocess_data(st.session_state.dataset.copy())
-        st.success('Données prétraitées avec succès!')
+    # Automatically encode categorical variables on a copy of the dataset
+    if 'encoded_dataset' not in st.session_state or st.session_state.dataset is not st.session_state.encoded_dataset:
+        st.session_state.encoded_dataset = encode_data(st.session_state.dataset.copy())
 
-    # Ensure the preprocessed dataset is updated if the dataset changes
-    if st.session_state["dataset"] is not None and st.session_state["preprocessed_dataset"] is None:
+    # Add a button for automatic preprocessing
+    if st.button("Prétraitement automatique des données"):
         with st.spinner('Prétraitement automatique des données...'):
-            st.session_state.preprocessed_dataset = preprocess_data(st.session_state.dataset.copy())
+            st.session_state.preprocessed_dataset = preprocess_data(st.session_state.encoded_dataset.copy())
         st.success('Données prétraitées avec succès!')
 
     # Show data preview first
     st.subheader("Aperçu des données prétraitées")
-    if st.session_state.preprocessed_dataset is not None:
-        st.dataframe(st.session_state.preprocessed_dataset)
+    if st.session_state.encoded_dataset is not None:
+        st.dataframe(st.session_state.encoded_dataset)
     else:
-        st.error("Les données prétraitées sont introuvables.")
+        st.error("Les données encodées sont introuvables.")
 
     selected2 = option_menu(None, ["Supervised Learning", "Unsupervised Learning"], 
         icons=['book-open', 'chart-line'], 
@@ -152,23 +155,28 @@ def show():
     if selected2 == "Supervised Learning":
         # Target selection
         st.subheader("Sélection de la variable cible")
-        if st.session_state.preprocessed_dataset is not None:
+        if st.session_state.encoded_dataset is not None:
             target_column = st.selectbox(
                 "Choisissez la colonne cible",
-                st.session_state.preprocessed_dataset.columns
+                st.session_state.encoded_dataset.columns
             )
             st.session_state.target_column = target_column  # Save target column in session state
         else:
-            st.error("Les données prétraitées sont introuvables.")
+            st.error("Les données encodées sont introuvables.")
             return
 
         if target_column:
             # Separate features and target
-            X = st.session_state.preprocessed_dataset.drop(columns=[target_column])
-            y = st.session_state.preprocessed_dataset[target_column]
+            X = st.session_state.encoded_dataset.drop(columns=[target_column])
+            y = st.session_state.encoded_dataset[target_column]
+
+            # Preprocess the data to handle NaN values
+            X = preprocess_data(X)
+            y = preprocess_data(pd.DataFrame(y)).iloc[:, 0]
 
             # Detect problem type
             problem_type = detect_problem_type(y)
+            st.session_state.problem_type = problem_type  # Save problem type in session state
             st.info(f"Type de problème détecté: {problem_type.title()}")
 
             if problem_type == "classification":
@@ -283,19 +291,28 @@ def show():
                     plt.title('Valeurs réelles vs. Valeurs prédites')
                     st.pyplot(plt.gcf())
 
+                    # Add regression report
+                    st.subheader("Rapport de régression")
+                    regression_report = {
+                        "MSE": mse,
+                        "R²": r2
+                    }
+                    report_df = pd.DataFrame(regression_report, index=[0])
+                    st.dataframe(report_df)
+
     elif selected2 == "Unsupervised Learning":
         st.subheader("KMeans Clustering")
         num_clusters = st.slider("Nombre de clusters", min_value=2, max_value=10, value=3, step=1)
         
         if st.button("Appliquer KMeans"):
-            X = st.session_state.preprocessed_dataset
+            X = st.session_state.encoded_dataset
             kmeans = KMeans(n_clusters=num_clusters, random_state=42)
             kmeans.fit(X)
-            st.session_state.preprocessed_dataset['Cluster'] = kmeans.labels_
+            st.session_state.encoded_dataset['Cluster'] = kmeans.labels_
             st.success(f"KMeans clustering appliqué avec {num_clusters} clusters.")
             
             st.subheader("Aperçu des clusters")
-            st.dataframe(st.session_state.preprocessed_dataset)
+            st.dataframe(st.session_state.encoded_dataset)
             
             st.subheader("Visualisation des clusters")
             plt.figure(figsize=(10, 5))
