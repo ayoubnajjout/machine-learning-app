@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
 from mpl_toolkits.mplot3d import Axes3D
 
 def show():
@@ -91,6 +92,20 @@ def display_dataset_info():
     st.write("Sélectionnez les colonnes que vous souhaitez visualiser :")
     selected_columns = st.multiselect("Colonnes disponibles", options=categorical_columns + numeric_columns)
 
+        # Bouton pour afficher la Heatmap et Matrice de Corrélation
+    st.subheader("Heatmap et Matrice de Corrélation")
+    if len(numeric_columns) > 1:
+            if st.button("Afficher la Heatmap de Corrélation"):
+                try:
+                    corr_matrix = dataset[numeric_columns].corr()
+                    fig, ax = plt.subplots(figsize=(10, 8))
+                    sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', ax=ax)
+                    plt.title("Heatmap de la Matrice de Corrélation")
+                    st.pyplot(fig)
+                except Exception as e:
+                    st.error(f"Erreur lors de la création de la heatmap : {e}")
+    else:
+            st.info("Pas assez de colonnes numériques pour créer une heatmap.")
     # Affichage des graphiques pour chaque colonne choisie
     for col in selected_columns:
         if col in numeric_columns:
@@ -239,3 +254,4 @@ def display_dataset_info():
                 st.success(f"La colonne {balance_column} est équilibrée.")
         except Exception as e:
             st.error(f"Erreur lors de la vérification de l'équilibre : {e}")
+

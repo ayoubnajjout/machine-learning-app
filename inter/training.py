@@ -23,6 +23,11 @@ import matplotlib.pyplot as plt
 from collections import Counter
 from sklearn.metrics import accuracy_score, precision_score, recall_score, confusion_matrix, ConfusionMatrixDisplay
 from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.metrics import classification_report
+
+# Initialize session state variables if they don't exist
+if 'target_column' not in st.session_state:
+    st.session_state.target_column = None
 
 def preprocess_data(df):
     # Create copies to avoid modifying original data
@@ -43,9 +48,10 @@ def preprocess_data(df):
     for col in categorical_cols:
         df[col] = le.fit_transform(df[col])
     
-    # Scale numeric features
-    scaler = StandardScaler()
-    df[numeric_cols] = scaler.fit_transform(df[numeric_cols])
+    # Scale numeric features only if needed
+    if df[numeric_cols].std().mean() > 1:
+        scaler = StandardScaler()
+        df[numeric_cols] = scaler.fit_transform(df[numeric_cols])
     
     return df
 
@@ -151,6 +157,7 @@ def show():
                 "Choisissez la colonne cible",
                 st.session_state.preprocessed_dataset.columns
             )
+            st.session_state.target_column = target_column  # Save target column in session state
         else:
             st.error("Les données prétraitées sont introuvables.")
             return
@@ -224,6 +231,10 @@ def show():
                 model.fit(X_train, y_train)
                 y_pred = model.predict(X_test)
 
+                # Save the trained model and target column in session state
+                st.session_state.trained_model = model
+                st.session_state.target_column = target_column
+
                 # Store split data in session state
                 st.session_state.X_train = X_train
                 st.session_state.X_test = X_test
@@ -249,6 +260,13 @@ def show():
                     fig, ax = plt.subplots(figsize=(10, 5))
                     cmd.plot(ax=ax)
                     st.pyplot(fig)
+
+                    # Add classification report
+                    st.subheader("Rapport de classification")
+                    target_names = [str(cls) for cls in model.classes_]
+                    report = classification_report(y_test, y_pred, target_names=target_names, output_dict=True)
+                    report_df = pd.DataFrame(report).transpose()
+                    st.dataframe(report_df)
                 else:  # regression
                     mse = mean_squared_error(y_test, y_pred)
                     r2 = r2_score(y_test, y_pred)
