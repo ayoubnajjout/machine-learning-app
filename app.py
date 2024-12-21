@@ -1,7 +1,7 @@
 import streamlit as st
 
 # Importation des fichiers de pages
-from inter import welcome, import_data, data_preparation, training, prediction, export_model
+from inter import create_dataset, welcome, import_data, data_preparation, training, prediction
 
 def main():
     # Custom CSS for better looking buttons
@@ -37,6 +37,8 @@ def main():
     # Create buttons for navigation - always visible
     if st.sidebar.button("📝 Bienvenue"):
         st.session_state.current_page = "Bienvenue"
+    if st.sidebar.button("📊 Création de dataset"):
+        st.session_state.current_page = "Création de dataset"
     if st.sidebar.button("📥 Importer les données"):
         st.session_state.current_page = "Importer les données"
     if st.sidebar.button("🔧 Préparation des données"):
@@ -45,12 +47,13 @@ def main():
         st.session_state.current_page = "Entraînement"
     if st.sidebar.button("🔮 Prédiction"):
         st.session_state.current_page = "Prédiction"
-    if st.sidebar.button("📤 Exporter le modèle"):
-        st.session_state.current_page = "Exporter le modèle"
+
     
     # Afficher le contenu en fonction de la page sélectionnée
     if st.session_state.current_page == "Bienvenue":
         welcome.show()
+    elif st.session_state.current_page == "Création de dataset":
+        create_dataset.show()
     elif st.session_state.current_page == "Importer les données":
         import_data.show()
     elif st.session_state.current_page == "Préparation des données":
@@ -59,8 +62,7 @@ def main():
         training.show()
     elif st.session_state.current_page == "Prédiction":
         prediction.show()
-    elif st.session_state.current_page == "Exporter le modèle":
-        export_model.show()
+
 
 # Lancer l'application
 if __name__ == "__main__":

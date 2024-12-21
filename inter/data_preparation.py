@@ -1,11 +1,15 @@
 import streamlit as st
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, LabelEncoder
-from imblearn.over_sampling import SMOTE
-import pandas as pd
+from imblearn.over_sampling import RandomOverSampler
+from imblearn.under_sampling import RandomUnderSampler
 import numpy as np
-import streamlit as st
 from io import BytesIO
+from collections import Counter
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+from inter.training import encode_data
 
 # Fonction pour gérer les valeurs manquantes
 def handle_missing_values(data: pd.DataFrame):
@@ -31,27 +35,25 @@ def handle_missing_values(data: pd.DataFrame):
     categorical_cols = data.select_dtypes(exclude=["number"]).columns
 
     # Options par type de colonne
-    with st.expander("Colonnes Numériques"):
-        if len(numeric_cols) > 0:
-            st.write("Colonnes numériques avec des valeurs manquantes :", numeric_cols.tolist())
-            numeric_option = st.radio(
-                "Méthode pour colonnes numériques :",
-                ["Remplir avec la moyenne", "Remplir avec la médiane", "Supprimer les lignes", "Ne rien faire"],
-                key="numeric_option"
-            )
-        else:
-            st.info("Aucune colonne numérique avec des valeurs manquantes.")
+    if len(numeric_cols) > 0:
+        st.write("Colonnes numériques avec des valeurs manquantes :", numeric_cols.tolist())
+        numeric_option = st.radio(
+            "Méthode pour colonnes numériques :",
+            ["Remplir avec la moyenne", "Remplir avec la médiane", "Supprimer les lignes", "Ne rien faire"],
+            key="numeric_option"
+        )
+    else:
+        st.info("Aucune colonne numérique avec des valeurs manquantes.")
 
-    with st.expander("Colonnes Catégoriques"):
-        if len(categorical_cols) > 0:
-            st.write("Colonnes catégoriques avec des valeurs manquantes :", categorical_cols.tolist())
-            categorical_option = st.radio(
-                "Méthode pour colonnes catégoriques :",
-                ["Remplir avec le mode", "Supprimer les lignes", "Ne rien faire"],
-                key="categorical_option"
-            )
-        else:
-            st.info("Aucune colonne catégorique avec des valeurs manquantes.")
+    if len(categorical_cols) > 0:
+        st.write("Colonnes catégoriques avec des valeurs manquantes :", categorical_cols.tolist())
+        categorical_option = st.radio(
+            "Méthode pour colonnes catégoriques :",
+            ["Remplir avec le mode", "Supprimer les lignes", "Ne rien faire"],
+            key="categorical_option"
+        )
+    else:
+        st.info("Aucune colonne catégorique avec des valeurs manquantes.")
 
     # Appliquer les méthodes choisies
     if st.button("Appliquer les méthodes choisies"):
@@ -222,66 +224,6 @@ def delete_columns(data: pd.DataFrame):
     else:
         st.info("Aucune colonne sélectionnée pour suppression.")
 
-# # Fonction pour détecter et supprimer les outliers
-# def remove_outliers(data: pd.DataFrame):
-#     st.subheader("Gestion des Outliers")
-    
-#     # Filtrer uniquement les colonnes numériques
-#     numeric_columns = data.select_dtypes(include=["number"]).columns.tolist()
-
-#     if not numeric_columns:
-#         st.warning("Aucune colonne numérique trouvée dans le dataset.")
-#         return
-
-#     # Afficher les colonnes numériques
-#     st.write("Colonnes numériques disponibles :", numeric_columns)
-
-#     # Choisir une option : supprimer les outliers d'une seule colonne ou de toutes les colonnes
-#     option = st.radio(
-#         "Choisir une méthode de suppression des outliers :",
-#         ("Supprimer les outliers d'une colonne spécifique", "Supprimer les outliers de tout le dataset")
-#     )
-
-#     # Choisir une méthode de détection des outliers
-#     method = st.selectbox(
-#         "Méthode de détection des outliers :",
-#         ["IQR (Interquartile Range)", "Z-Score"]
-#     )
-
-#     # Appliquer la suppression des outliers
-#     if option == "Supprimer les outliers d'une colonne spécifique":
-#         column = st.selectbox("Sélectionnez la colonne :", numeric_columns)
-
-#         if st.button("Supprimer les outliers de cette colonne"):
-#             initial_size = data.shape[0]
-
-#             if method == "IQR (Interquartile Range)":
-#                 data = remove_outliers_iqr(data, column)
-#             elif method == "Z-Score":
-#                 data = remove_outliers_zscore(data, column)
-
-#             final_size = data.shape[0]
-#             st.success(f"Outliers supprimés de la colonne '{column}'. {initial_size - final_size} lignes ont été supprimées.")
-#             st.dataframe(data)
-
-#     elif option == "Supprimer les outliers de tout le dataset":
-#         if st.button("Supprimer les outliers de tout le dataset"):
-#             initial_size = data.shape[0]
-
-#             if method == "IQR (Interquartile Range)":
-#                 for column in numeric_columns:
-#                     data = remove_outliers_iqr(data, column)
-#             elif method == "Z-Score":
-#                 for column in numeric_columns:
-#                     data = remove_outliers_zscore(data, column)
-
-#             final_size = data.shape[0]
-#             st.success(f"Outliers supprimés du dataset entier. {initial_size - final_size} lignes ont été supprimées.")
-#             st.dataframe(data)
-
-#     return data
-
-
 # Méthode 1 : Suppression des outliers avec l'IQR
 def remove_outliers_iqr(data: pd.DataFrame, column: str) -> pd.DataFrame:
     Q1 = data[column].quantile(0.25)
@@ -371,9 +313,9 @@ def manage_duplicates(data: pd.DataFrame):
 
 
 # balance data
-def balance_data_with_smote(data: pd.DataFrame, target_column: str):
+def balance_data(data: pd.DataFrame, target_column: str, method='auto'):
     """
-    Équilibre les classes dans le dataset en utilisant SMOTE.
+    Équilibre les classes dans le dataset en utilisant oversampling ou undersampling.
     """
     if target_column not in data.columns:
         st.error(f"La colonne cible '{target_column}' n'existe pas dans le dataset.")
@@ -389,23 +331,45 @@ def balance_data_with_smote(data: pd.DataFrame, target_column: str):
 
         # Vérifier si des colonnes contiennent des valeurs NaN après conversion
         if X.isnull().any().any():
-            st.error("Certaines colonnes contiennent des valeurs non numériques ou NaN. Veuillez les traiter avant d'appliquer SMOTE.")
+            st.error("Certaines colonnes contiennent des valeurs non numériques ou NaN. Veuillez les traiter avant d'appliquer l'équilibrage.")
             return data
 
-        # Appliquer SMOTE
-        smote = SMOTE(random_state=42)
-        X_resampled, y_resampled = smote.fit_resample(X, y)
+        # Appliquer la méthode d'équilibrage
+        if method == 'auto':
+            ratio = min(Counter(y).values()) / max(Counter(y).values())
+            if ratio < 0.2:  # If minority class is less than 20% of majority class
+                sampler = RandomOverSampler(random_state=42)
+                message = "Sur-échantillonnage aléatoire automatique effectué"
+            else:
+                sampler = RandomUnderSampler(random_state=42)
+                message = "Sous-échantillonnage aléatoire automatique effectué"
+        elif method == 'random_over':
+            sampler = RandomOverSampler(random_state=42)
+            message = "Sur-échantillonnage aléatoire effectué"
+        elif method == 'random_under':
+            sampler = RandomUnderSampler(random_state=42)
+            message = "Sous-échantillonnage aléatoire effectué"
+
+        X_resampled, y_resampled = sampler.fit_resample(X, y)
 
         # Reconstruire le dataset équilibré
         balanced_data = pd.concat(
             [pd.DataFrame(X_resampled, columns=X.columns), pd.Series(y_resampled, name=target_column)], axis=1
         )
 
-        st.success(f"Le dataset a été équilibré avec succès. Nombre de lignes : {len(balanced_data)}.")
+        st.success(f"Le dataset a été équilibré avec succès. Nombre de lignes : {len(balanced_data)}. {message}")
+
+        # Afficher la distribution des classes après équilibrage
+        st.subheader("Distribution des classes après équilibrage")
+        fig, ax = plt.subplots(figsize=(10, 5))
+        sns.countplot(x=y_resampled, ax=ax)
+        plt.title('Distribution des classes après équilibrage')
+        st.pyplot(fig)
+
         return balanced_data
 
     except Exception as e:
-        st.error(f"Erreur lors de l'application de SMOTE : {str(e)}")
+        st.error(f"Erreur lors de l'application de l'équilibrage : {str(e)}")
         return data
 
 
@@ -556,13 +520,13 @@ def show():
     st.title("Préparation des Données : Gestion des Valeurs Manquantes, Normalisation, Encodage et Suppression des Outliers")
 
     # Vérifier si le dataset est défini dans la session
-    if "dataset" not in st.session_state or st.session_state["dataset"] is None:
+    if "original_dataset" not in st.session_state or st.session_state["original_dataset"] is None:
         st.warning("Veuillez importer un dataset avant de continuer.")
         return
 
     # Créer une copie de travail des données
     if "temp_dataset" not in st.session_state:
-        st.session_state["temp_dataset"] = st.session_state["dataset"].copy()
+        st.session_state["temp_dataset"] = st.session_state["original_dataset"].copy()
     
     # Utiliser temp_dataset pour toutes les modifications
     data = st.session_state["temp_dataset"]
@@ -624,11 +588,20 @@ def show():
     with st.expander("📉 Gestion des outliers"):
         remove_outliers_ui(data)
 
-    # Équilibrage des classes avec SMOTE
-    with st.expander("⚖️ Équilibrage des classes avec SMOTE"):
+    # Équilibrage des classes
+    with st.expander("⚖️ Équilibrage des classes"):
         target_column = st.selectbox("Sélectionnez la colonne cible pour l'équilibrage (classification)", data.columns)
-        if st.button("Appliquer SMOTE", key="apply_smote_button"):
-            st.session_state["temp_dataset"] = balance_data_with_smote(data, target_column)
+        resampling_method = st.selectbox(
+            "Choisissez une méthode de rééquilibrage:",
+            ['auto', 'random_over', 'random_under'],
+            format_func=lambda x: {
+                'auto': 'Automatique',
+                'random_over': 'Sur-échantillonnage aléatoire',
+                'random_under': 'Sous-échantillonnage aléatoire'
+            }[x]
+        )
+        if st.button("Appliquer l'équilibrage", key="apply_balance_button"):
+            st.session_state["temp_dataset"] = balance_data(data, target_column, resampling_method)
 
     # Aperçu final et export (without expander)
     st.write("Aperçu du dataset mis à jour :")
@@ -640,15 +613,16 @@ def show():
     col1, col2 = st.columns(2)
     with col1:
         if st.button("❌ Annuler les modifications", key="cancel_bottom", type="secondary", use_container_width=True):
-            st.session_state["temp_dataset"] = st.session_state["dataset"].copy()
+            st.session_state["temp_dataset"] = st.session_state["original_dataset"].copy()
             st.success("Modifications annulées!")
-            st.rerun()
     with col2:
         if st.button("💾 Sauvegarder les modifications", key="save_bottom", type="primary", use_container_width=True):
             # Drop the 'selected' column before saving
             if 'selected' in st.session_state["temp_dataset"].columns:
                 st.session_state["temp_dataset"] = st.session_state["temp_dataset"].drop(columns=['selected'])
             
-            st.session_state["dataset"] = st.session_state["temp_dataset"].copy()
+            st.session_state["original_dataset"] = st.session_state["temp_dataset"].copy()
+            st.session_state["dataset"] = st.session_state["temp_dataset"].copy()  # Ensure training dataset is updated
             st.success("Modifications sauvegardées avec succès!")
+            st.session_state["encoded_dataset"] = encode_data(st.session_state["original_dataset"].copy())
 
