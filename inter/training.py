@@ -25,6 +25,7 @@ from collections import Counter
 from sklearn.metrics import accuracy_score, precision_score, recall_score, confusion_matrix, ConfusionMatrixDisplay
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.metrics import classification_report
+from sklearn.ensemble import AdaBoostClassifier, AdaBoostRegressor, GradientBoostingClassifier, GradientBoostingRegressor
 
 # Initialize session state variables if they don't exist
 if 'target_column' not in st.session_state:
@@ -54,6 +55,8 @@ def preprocess_data(df):
 def encode_data(df):
     """Encode categorical variables"""
     categorical_cols = df.select_dtypes(include=['object']).columns
+    # Exclude the 'day' column from encoding
+    categorical_cols = categorical_cols.drop('day', errors='ignore')
     le = LabelEncoder()
     for col in categorical_cols:
         df[col] = le.fit_transform(df[col])
@@ -95,14 +98,21 @@ def balance_data(X, y, method='auto'):
     except Exception as e:
         return None, None, str(e)
 
+
+
 def detect_problem_type(y):
     """Detect if we have a classification or regression problem"""
-    unique_values = y.nunique()
+    
+    # Si la colonne est de type catégoriel (avant ou après encodage)
+    if y.dtype.name == 'category' or y.nunique() <= 10:
+        return "classification"
+    
+    # Si la colonne est numérique et a un grand nombre de valeurs uniques (> 10% des données), c'est un problème de régression
     if pd.api.types.is_numeric_dtype(y):
-        # If numeric and many unique values (>10% of total), likely regression
-        if unique_values > len(y) * 0.1:
+        if y.nunique() > len(y) * 0.1:
             return "regression"
-    # If few unique values or categorical, likely classification
+    
+    # Si rien d'autre, on assume que c'est une classification
     return "classification"
 
 def get_models(problem_type):
@@ -113,14 +123,18 @@ def get_models(problem_type):
             "SVM": SVC(),
             "Arbre de Décision": DecisionTreeClassifier(),
             "Random Forest": RandomForestClassifier(),
-            "KNN": KNeighborsClassifier()
+            "KNN": KNeighborsClassifier(),
+            "AdaBoost": AdaBoostClassifier(),
+            "Gradient Boosting": GradientBoostingClassifier()
         }
     else:  # regression
         return {
             "Régression Linéaire": LinearRegression(),
             "SVR": SVR(),
             "Arbre de Décision": DecisionTreeRegressor(),
-            "Random Forest": RandomForestRegressor()
+            "Random Forest": RandomForestRegressor(),
+            "AdaBoost": AdaBoostRegressor(),
+            "Gradient Boosting": GradientBoostingRegressor()
         }
 
 def show():
