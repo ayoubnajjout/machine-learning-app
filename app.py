@@ -1,10 +1,10 @@
 import streamlit as st
 
-# Importation des fichiers de pages
+
 from inter import create_dataset, welcome, import_data, data_preparation, training, prediction
 
 def main():
-    # Custom CSS for better looking buttons
+
     st.markdown("""
         <style>
         .sidebar .sidebar-content {
@@ -27,14 +27,14 @@ def main():
         </style>
     """, unsafe_allow_html=True)
 
-    # Initialize session state for page if not exists
+
     if 'current_page' not in st.session_state:
         st.session_state.current_page = "Bienvenue"
     
-    # Configuration de la barre latérale
+
     st.sidebar.title("Navigation")
     
-    # Create buttons for navigation - always visible
+
     if st.sidebar.button("📝 Bienvenue"):
         st.session_state.current_page = "Bienvenue"
     if st.sidebar.button("📊 Création de dataset"):
@@ -49,7 +49,7 @@ def main():
         st.session_state.current_page = "Prédiction"
 
     
-    # Afficher le contenu en fonction de la page sélectionnée
+
     if st.session_state.current_page == "Bienvenue":
         welcome.show()
     elif st.session_state.current_page == "Création de dataset":
@@ -64,6 +64,6 @@ def main():
         prediction.show()
 
 
-# Lancer l'application
+
 if __name__ == "__main__":
     main()

@@ -11,11 +11,11 @@ import matplotlib.pyplot as plt
 
 from inter.training import encode_data
 
-# Fonction pour gérer les valeurs manquantes
+
 def handle_missing_values(data: pd.DataFrame):
     st.subheader("Analyse des valeurs manquantes")
 
-    # Afficher un résumé des valeurs manquantes
+
     missing_data = data.isnull().sum()
     total_missing = missing_data.sum()
     st.write(f"**Total des valeurs manquantes : {total_missing}**")
@@ -24,17 +24,17 @@ def handle_missing_values(data: pd.DataFrame):
         st.success("Aucune valeur manquante détectée.")
         return
 
-    # Afficher uniquement les colonnes avec des valeurs manquantes
+
     missing_cols = missing_data[missing_data > 0]
     st.dataframe(missing_cols, use_container_width=True, key="missing_cols_df")
 
     st.subheader("Options pour gérer les valeurs manquantes")
     
-    # Séparer les colonnes en types (numériques vs catégoriques)
+
     numeric_cols = data.select_dtypes(include=["number"]).columns
     categorical_cols = data.select_dtypes(exclude=["number"]).columns
 
-    # Options par type de colonne
+
     if len(numeric_cols) > 0:
         st.write("Colonnes numériques avec des valeurs manquantes :", numeric_cols.tolist())
         numeric_option = st.radio(
@@ -55,9 +55,9 @@ def handle_missing_values(data: pd.DataFrame):
     else:
         st.info("Aucune colonne catégorique avec des valeurs manquantes.")
 
-    # Appliquer les méthodes choisies
+
     if st.button("Appliquer les méthodes choisies"):
-        # Gestion des colonnes numériques
+
         if len(numeric_cols) > 0:
             if numeric_option == "Remplir avec la moyenne":
                 data[numeric_cols] = data[numeric_cols].fillna(data[numeric_cols].mean())
@@ -69,7 +69,7 @@ def handle_missing_values(data: pd.DataFrame):
                 data.dropna(subset=numeric_cols, inplace=True)
                 st.success("Lignes avec des valeurs manquantes dans les colonnes numériques supprimées.")
 
-        # Gestion des colonnes catégoriques
+
         if len(categorical_cols) > 0:
             if categorical_option == "Remplir avec le mode":
                 data[categorical_cols] = data[categorical_cols].fillna(data[categorical_cols].mode().iloc[0])
@@ -78,55 +78,55 @@ def handle_missing_values(data: pd.DataFrame):
                 data.dropna(subset=categorical_cols, inplace=True)
                 st.success("Lignes avec des valeurs manquantes dans les colonnes catégoriques supprimées.")
 
-        # Afficher un aperçu des données après le traitement
+
         st.subheader("Aperçu des données après traitement")
         st.dataframe(data.head(), key="missing_values_preview")
 
 
-# Fonction pour normaliser ou standardiser les données, avec exclusions de certaines colonnes
+
 def normalize_or_standardize(data: pd.DataFrame, target_col: str = None):
     st.subheader("Normalisation ou Standardisation des Colonnes Numériques")
 
-    # Séparer les colonnes numériques
+
     numeric_cols = data.select_dtypes(include=["number"]).columns
 
     if len(numeric_cols) > 0:
         st.write("Colonnes numériques disponibles :", numeric_cols.tolist())
         
-        # Option pour exclure certaines colonnes de la transformation (ex: colonne cible ou colonnes discrètes)
+
         exclude_cols = st.multiselect(
             "Choisir les colonnes à exclure de la transformation (ex. colonne cible, colonnes discrètes) :", 
             options=numeric_cols,
             default=[target_col] if target_col else []
         )
         
-        # Filtrer les colonnes numériques à transformer (en excluant celles choisies)
+
         cols_to_transform = [col for col in numeric_cols if col not in exclude_cols]
 
-        # Vérifier si après exclusion, il y a encore des colonnes à transformer
+
         if len(cols_to_transform) == 0:
             st.warning("Aucune colonne à transformer après exclusion des colonnes sélectionnées.")
             return
         
         st.write("Colonnes sélectionnées pour la transformation :", cols_to_transform)
         
-        # Demander à l'utilisateur de choisir la méthode de transformation
+
         method = st.radio(
             "Méthode de transformation :",
             ["Normaliser (Min-Max)", "Standardiser (Z-score)"]
         )
         
-        # Demander si on veut exclure les colonnes discrètes (comme 0, 1, 2)
+
         exclude_discrete = st.checkbox("Exclure les colonnes avec des valeurs discrètes (par exemple, 0, 1, 2) ?", value=True)
         
         if exclude_discrete:
-            # Exclure les colonnes qui contiennent des valeurs discrètes (0, 1, 2)
+
             cols_to_exclude = []
             for col in cols_to_transform:
-                if data[col].nunique() <= 3:  # Si le nombre de valeurs uniques <= 3, considérer comme discrètes
+                if data[col].nunique() <= 3: 
                     cols_to_exclude.append(col)
             
-            # Filtrer les colonnes à transformer en excluant celles discrètes
+
             cols_to_transform = [col for col in cols_to_transform if col not in cols_to_exclude]
             if len(cols_to_transform) == 0:
                 st.warning("Toutes les colonnes sélectionnées ont été exclues en raison de leurs valeurs discrètes.")
@@ -134,11 +134,11 @@ def normalize_or_standardize(data: pd.DataFrame, target_col: str = None):
             
             st.write(f"Colonnes après exclusion des colonnes discrètes : {cols_to_transform}")
         
-        # Créer un bouton pour appliquer la transformation
+
         if st.button("Appliquer la transformation"):
             st.write(f"Transformation appliquée aux colonnes : {cols_to_transform}")
             
-            # Appliquer la transformation choisie
+
             if method == "Normaliser (Min-Max)":
                 scaler = MinMaxScaler()
                 data[cols_to_transform] = scaler.fit_transform(data[cols_to_transform])
@@ -149,7 +149,7 @@ def normalize_or_standardize(data: pd.DataFrame, target_col: str = None):
                 data[cols_to_transform] = scaler.fit_transform(data[cols_to_transform])
                 st.success(f"Colonnes sélectionnées standardisées avec Z-score.")
             
-            # Afficher un aperçu des données après transformation
+
             st.subheader("Aperçu des données après transformation")
             st.dataframe(data[cols_to_transform].head(), key="normalized_preview")
         else:
@@ -158,29 +158,29 @@ def normalize_or_standardize(data: pd.DataFrame, target_col: str = None):
     else:
         st.info("Aucune colonne numérique disponible pour la transformation.")
 
-# Fonction pour encoder les colonnes catégoriques
+
 def encode_categorical_columns(data: pd.DataFrame):
     st.subheader("Encodage des Colonnes Catégoriques")
 
-    # Séparer les colonnes catégoriques
+
     categorical_cols = data.select_dtypes(exclude=["number"]).columns
 
     if len(categorical_cols) > 0:
         st.write("Colonnes catégoriques disponibles :", categorical_cols.tolist())
         
-        # Checkbox pour encoder toutes les colonnes
+
         encode_all = st.checkbox("Encoder toutes les colonnes catégoriques")
         
         if encode_all:
             selected_cols = categorical_cols.tolist()
         else:
-            # Demander à l'utilisateur de sélectionner les colonnes à encoder
+
             selected_cols = st.multiselect(
                 "Sélectionner les colonnes à encoder :", 
                 categorical_cols.tolist()
             )
         
-        # Bouton pour déclencher l'encodage
+
         if st.button("Encoder les colonnes sélectionnées"):
             if selected_cols:
                 encoder = LabelEncoder()
@@ -188,7 +188,7 @@ def encode_categorical_columns(data: pd.DataFrame):
                     data[col] = encoder.fit_transform(data[col])
                 st.success(f"Colonnes encodées : {', '.join(selected_cols)}")
                 
-                # Aperçu des données après encodage
+
                 st.subheader("Aperçu des données après encodage")
                 st.dataframe(data[selected_cols].head(), key="encoded_preview")
             else:
@@ -197,34 +197,34 @@ def encode_categorical_columns(data: pd.DataFrame):
         st.info("Aucune colonne catégorique disponible pour l'encodage.")
 
 
-# Fonction pour supprimer des colonnes
+
 def delete_columns(data: pd.DataFrame):
     st.subheader("Suppression de Colonnes")
 
-    # Lister toutes les colonnes du dataset
+
     all_columns = data.columns.tolist()
     st.write("Colonnes disponibles dans le dataset :", all_columns)
 
-    # Demander à l'utilisateur de sélectionner les colonnes à supprimer
+
     columns_to_delete = st.multiselect(
         "Sélectionner les colonnes à supprimer :",
         options=all_columns,
     )
 
-    # Vérifier si l'utilisateur a sélectionné des colonnes
+
     if columns_to_delete:
         if st.button("Supprimer les colonnes sélectionnées"):
-            # Supprimer les colonnes sélectionnées
+
             data.drop(columns=columns_to_delete, inplace=True)
             st.success(f"Les colonnes suivantes ont été supprimées : {columns_to_delete}")
             
-            # Aperçu du dataset après suppression
+
             st.subheader("Aperçu des données après suppression des colonnes")
             st.dataframe(data.head(), key="deleted_cols_preview")
     else:
         st.info("Aucune colonne sélectionnée pour suppression.")
 
-# Méthode 1 : Suppression des outliers avec l'IQR
+
 def remove_outliers_iqr(data: pd.DataFrame, column: str) -> pd.DataFrame:
     Q1 = data[column].quantile(0.25)
     Q3 = data[column].quantile(0.75)
@@ -232,19 +232,19 @@ def remove_outliers_iqr(data: pd.DataFrame, column: str) -> pd.DataFrame:
     lower_bound = Q1 - 1.5 * IQR
     upper_bound = Q3 + 1.5 * IQR
 
-    # Retourner les données sans les outliers
+
     return data[(data[column] >= lower_bound) & (data[column] <= upper_bound)].copy()
 
-# Méthode 2 : Suppression des outliers avec le Z-Score
+
 def remove_outliers_zscore(data: pd.DataFrame, column: str, threshold: float = 3) -> pd.DataFrame:
     from scipy.stats import zscore
 
     z_scores = zscore(data[column])
-    # Retourner les données sans les outliers
+
     return data[np.abs(z_scores) <= threshold].copy()
 
 
-# user interface outliers ...
+
 def remove_outliers_ui(data: pd.DataFrame):
     st.subheader("Suppression des Outliers")
 
@@ -253,7 +253,7 @@ def remove_outliers_ui(data: pd.DataFrame):
         st.warning("Aucune colonne numérique trouvée pour gérer les outliers.")
         return
 
-    # Choix de la méthode (IQR ou Z-Score)
+
     method = st.radio("Choisissez une méthode pour supprimer les outliers :", ["IQR", "Z-Score"])
     mode = st.radio("Appliquer sur :", ["Une colonne spécifique", "Toutes les colonnes numériques"])
 
@@ -289,30 +289,30 @@ def remove_outliers_ui(data: pd.DataFrame):
 
 
 
-# Fonction pour gérer les doublons
+
 def manage_duplicates(data: pd.DataFrame):
     st.subheader("Gestion des Doublons")
     
-    # Calculer le nombre de doublons
+
     num_duplicates = data.duplicated().sum()
 
-    # Afficher le nombre de doublons
+
     st.write(f"Nombre de doublons dans le dataset : {num_duplicates}")
 
     if num_duplicates > 0:
-        # Ajouter un bouton pour supprimer les doublons
+
         if st.button("Supprimer les doublons"):
-            # Supprimer les doublons du dataset
+
             data.drop_duplicates(inplace=True)
 
-            # Mettre à jour le dataset dans la session
+
             st.session_state["temp_dataset"] = data
 
-            # Afficher un message de succès
+
             st.success(f"{num_duplicates} doublons ont été supprimés.")
 
 
-# balance data
+
 def balance_data(data: pd.DataFrame, target_column: str, method='auto'):
     """
     Équilibre les classes dans le dataset en utilisant oversampling ou undersampling.
@@ -322,22 +322,22 @@ def balance_data(data: pd.DataFrame, target_column: str, method='auto'):
         return data
 
     try:
-        # Vérifier que la colonne cible existe et extraire X (caractéristiques) et y (cible)
+
         X = data.drop(columns=[target_column])
         y = data[target_column]
 
-        # Forcer les colonnes à être numériques si nécessaire
+
         X = X.apply(pd.to_numeric, errors="coerce")
 
-        # Vérifier si des colonnes contiennent des valeurs NaN après conversion
+
         if X.isnull().any().any():
             st.error("Certaines colonnes contiennent des valeurs non numériques ou NaN. Veuillez les traiter avant d'appliquer l'équilibrage.")
             return data
 
-        # Appliquer la méthode d'équilibrage
+
         if method == 'auto':
             ratio = min(Counter(y).values()) / max(Counter(y).values())
-            if ratio < 0.2:  # If minority class is less than 20% of majority class
+            if ratio < 0.2:  
                 sampler = RandomOverSampler(random_state=42)
                 message = "Sur-échantillonnage aléatoire automatique effectué"
             else:
@@ -352,14 +352,14 @@ def balance_data(data: pd.DataFrame, target_column: str, method='auto'):
 
         X_resampled, y_resampled = sampler.fit_resample(X, y)
 
-        # Reconstruire le dataset équilibré
+
         balanced_data = pd.concat(
             [pd.DataFrame(X_resampled, columns=X.columns), pd.Series(y_resampled, name=target_column)], axis=1
         )
 
         st.success(f"Le dataset a été équilibré avec succès. Nombre de lignes : {len(balanced_data)}. {message}")
 
-        # Afficher la distribution des classes après équilibrage
+
         st.subheader("Distribution des classes après équilibrage")
         fig, ax = plt.subplots(figsize=(10, 5))
         sns.countplot(x=y_resampled, ax=ax)
@@ -373,7 +373,7 @@ def balance_data(data: pd.DataFrame, target_column: str, method='auto'):
         return data
 
 
-# Fonction pour ajouter une colonne ou une ligne
+
 def add_column_or_row(data: pd.DataFrame):
     st.subheader("Ajouter une Colonne ou une Ligne")
     
@@ -388,36 +388,36 @@ def add_column_or_row(data: pd.DataFrame):
             st.dataframe(data.head(), key="added_col_row_preview")
     
     elif option == "Ajouter une ligne":
-        # Calculate rows needed
+
         num_columns = len(data.columns)
-        num_rows = (num_columns + 2) // 3  # Ceiling division to handle non-divisible numbers
+        num_rows = (num_columns + 2) // 3  
         
         new_row = {}
         
-        # Create buttons row by row
+
         for row in range(num_rows):
-            # Create 3 columns for each row
+
             cols = st.columns(3)
             
-            # Fill each column in current row
+
             for col_idx in range(3):
-                # Calculate current column index
+
                 current_idx = row * 3 + col_idx
                 
-                # Break if we've handled all columns
+
                 if current_idx >= num_columns:
                     break
                     
-                # Get column name and create input in appropriate column
+
                 column_name = data.columns[current_idx]
                 if column_name == 'selected':
                     new_row[column_name] = False
                     continue
 
-                # Get column data type
+
                 col_dtype = data[column_name].dtype
                 
-                # Create appropriate input field based on data type
+
                 try:
                     if np.issubdtype(col_dtype, np.number):
                         if np.issubdtype(col_dtype, np.integer):
@@ -446,7 +446,7 @@ def add_column_or_row(data: pd.DataFrame):
         
         if st.button("Ajouter la ligne"):
             try:
-                # Convert the values to appropriate types
+
                 for col in data.columns:
                     if col != 'selected':
                         new_row[col] = data[col].dtype.type(new_row[col])
@@ -465,10 +465,10 @@ def add_column_or_row(data: pd.DataFrame):
 def export_data(data: pd.DataFrame):
     st.subheader("Exporter les données")
     
-    # Drop the 'selected' column before export
+
     data_to_export = data.drop(columns=['selected']) if 'selected' in data.columns else data
     
-    # Sélection du format d'export
+
     export_format = st.selectbox(
         "Format d'export",
         ["CSV", "Excel", "JSON"]
@@ -476,7 +476,7 @@ def export_data(data: pd.DataFrame):
     
     try:
         if export_format == "CSV":
-            # Export CSV
+
             csv = data_to_export.to_csv(index=False)
             b64 = BytesIO()
             b64.write(csv.encode())
@@ -489,7 +489,7 @@ def export_data(data: pd.DataFrame):
             )
         
         elif export_format == "Excel":
-            # Export Excel
+
             output = BytesIO()
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
                 data_to_export.to_excel(writer, index=False)
@@ -501,8 +501,8 @@ def export_data(data: pd.DataFrame):
                 use_container_width=True
             )
         
-        else:  # JSON
-            # Export JSON
+        else:  
+
             json_str = data_to_export.to_json(orient='records')
             st.download_button(
                 label="📥 Télécharger JSON",
@@ -515,25 +515,23 @@ def export_data(data: pd.DataFrame):
     except Exception as e:
         st.error(f"Une erreur s'est produite lors de l'export : {str(e)}")
 
-# Fonction principale pour afficher la section
+
 def show():
     st.title("Préparation des Données : Gestion des Valeurs Manquantes, Normalisation, Encodage et Suppression des Outliers")
 
-    # Vérifier si le dataset est défini dans la session
+
     if "original_dataset" not in st.session_state or st.session_state["original_dataset"] is None:
         st.warning("Veuillez importer un dataset avant de continuer.")
         return
 
-    # Créer une copie de travail des données
+
     if "temp_dataset" not in st.session_state:
         st.session_state["temp_dataset"] = st.session_state["original_dataset"].copy()
     
-    # Utiliser temp_dataset pour toutes les modifications
+
     data = st.session_state["temp_dataset"]
 
-    # Ajouter les boutons Save/Cancel en haut de la page
-
-    # Modification et suppression des lignes
+    
     with st.expander("📝 Modification et suppression des lignes"):
         data['selected'] = False
         unique_key = f"main_editor_{hash(str(data.shape))}"
@@ -560,35 +558,35 @@ def show():
                 key=filtered_key,
             )
 
-    # Suppression de colonnes
+
     with st.expander("🗑️ Suppression de colonnes"):
         delete_columns(data)
 
-    # Ajout de colonnes ou lignes
+
     with st.expander("➕ Ajout de colonnes ou lignes"):
         add_column_or_row(data)
 
-    # Gestion des doublons
+
     with st.expander("🔄 Gestion des doublons"):
         manage_duplicates(data)
 
-    # Gestion des valeurs manquantes
+
     with st.expander("❓ Gestion des valeurs manquantes"):
         handle_missing_values(data)
 
-    # Normalisation/Standardisation
+
     with st.expander("📊 Normalisation et standardisation"):
         normalize_or_standardize(data)
 
-    # Encodage des colonnes catégoriques
+
     with st.expander("🔠 Encodage des colonnes catégoriques"):
         encode_categorical_columns(data)
 
-    # Gestion des outliers
+
     with st.expander("📉 Gestion des outliers"):
         remove_outliers_ui(data)
 
-    # Équilibrage des classes
+
     with st.expander("⚖️ Équilibrage des classes"):
         target_column = st.selectbox("Sélectionnez la colonne cible pour l'équilibrage (classification)", data.columns)
         resampling_method = st.selectbox(
@@ -603,13 +601,13 @@ def show():
         if st.button("Appliquer l'équilibrage", key="apply_balance_button"):
             st.session_state["temp_dataset"] = balance_data(data, target_column, resampling_method)
 
-    # Aperçu final et export (without expander)
+
     st.write("Aperçu du dataset mis à jour :")
     preview_data = data.drop(columns=['selected']) if 'selected' in data.columns else data
     st.dataframe(preview_data, key="updated_dataset_preview")
     export_data(data)
 
-    # Boutons de sauvegarde
+
     col1, col2 = st.columns(2)
     with col1:
         if st.button("❌ Annuler les modifications", key="cancel_bottom", type="secondary", use_container_width=True):
@@ -617,12 +615,12 @@ def show():
             st.success("Modifications annulées!")
     with col2:
         if st.button("💾 Sauvegarder les modifications", key="save_bottom", type="primary", use_container_width=True):
-            # Drop the 'selected' column before saving
+
             if 'selected' in st.session_state["temp_dataset"].columns:
                 st.session_state["temp_dataset"] = st.session_state["temp_dataset"].drop(columns=['selected'])
             
             st.session_state["original_dataset"] = st.session_state["temp_dataset"].copy()
-            st.session_state["dataset"] = st.session_state["temp_dataset"].copy()  # Ensure training dataset is updated
+            st.session_state["dataset"] = st.session_state["temp_dataset"].copy()  
             st.success("Modifications sauvegardées avec succès!")
             st.session_state["encoded_dataset"] = encode_data(st.session_state["original_dataset"].copy())
 
