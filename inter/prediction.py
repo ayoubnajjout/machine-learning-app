@@ -3,26 +3,28 @@ import pandas as pd
 import numpy as np
 from inter.training import encode_data
 from sklearn.preprocessing import LabelEncoder
+import pickle
+import base64
 
 def show():
     st.title("Prédiction avec le modèle entraîné")
 
-    # Check if the model is trained and available
+
     if 'trained_model' not in st.session_state or st.session_state.trained_model is None:
         st.warning("Veuillez entraîner un modèle dans l'onglet Entraînement avant de faire des prédictions.")
         return
 
-    # Check if the dataset is available
+
     if 'dataset' not in st.session_state or st.session_state.dataset is None:
         st.warning("Veuillez importer et préparer vos données avant de faire des prédictions.")
         return
 
-    # Get the trained model and problem type
+
     model = st.session_state.trained_model
     problem_type = st.session_state.problem_type
     target_column = st.session_state.target_column
 
-    # Input data for prediction
+
     st.subheader("Entrée des données pour la prédiction")
     input_data = {}
     for col in st.session_state.dataset.columns:
@@ -33,18 +35,19 @@ def show():
             input_data[col] = st.text_input(f"Valeur pour {col}")
 
     if st.button("Faire une prédiction"):
+
         try:
-            # Convert input data to DataFrame
+
             input_df = pd.DataFrame([input_data])
 
-            # Encode categorical variables
+
             input_df = encode_data(input_df)
 
-            # Make prediction
+
             prediction = model.predict(input_df)
 
             if problem_type == "classification":
-                # Decode the predicted class
+                
                 le = LabelEncoder()
                 le.fit(st.session_state.dataset[target_column])
                 predicted_class = le.inverse_transform(prediction)
@@ -54,3 +57,23 @@ def show():
 
         except Exception as e:
             st.error(f"Erreur lors de la prédiction : {str(e)}")
+
+    st.subheader("Exporter le modèle")
+    model_name = st.text_input("Nom du fichier du modèle (sans extension)", "model")
+    if st.button("Exporter le modèle"):
+        try:
+            with open(f"{model_name}.pkl", "wb") as f:
+                pickle.dump(model, f)
+            st.success(f"Modèle exporté sous le nom : {model_name}.pkl")
+
+            with open(f"{model_name}.pkl", "rb") as f:
+                bytes_data = f.read()
+                b64 = base64.b64encode(bytes_data).decode()
+                st.download_button(
+                    label="Télécharger le modèle",
+                    data=bytes_data,
+                    file_name=f"{model_name}.pkl",
+                    mime="application/octet-stream"
+                )
+        except Exception as e:
+            st.error(f"Erreur lors de l'exportation du modèle : {str(e)}")
