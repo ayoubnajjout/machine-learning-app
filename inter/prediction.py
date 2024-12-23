@@ -47,7 +47,7 @@ def show():
             prediction = model.predict(input_df)
 
             if problem_type == "classification":
-                
+
                 le = LabelEncoder()
                 le.fit(st.session_state.dataset[target_column])
                 predicted_class = le.inverse_transform(prediction)
@@ -62,8 +62,15 @@ def show():
     model_name = st.text_input("Nom du fichier du modèle (sans extension)", "model")
     if st.button("Exporter le modèle"):
         try:
+            data = {
+                'model': model,
+                'columns': st.session_state.dataset.columns.tolist(),
+                'target_column': target_column,
+                'problem_type': problem_type,
+                'dataset': st.session_state.dataset.to_dict()
+            }
             with open(f"{model_name}.pkl", "wb") as f:
-                pickle.dump(model, f)
+                pickle.dump(data, f)
             st.success(f"Modèle exporté sous le nom : {model_name}.pkl")
 
             with open(f"{model_name}.pkl", "rb") as f:

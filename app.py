@@ -1,7 +1,7 @@
 import streamlit as st
 
 
-from inter import create_dataset, welcome, import_data, data_preparation, training, prediction
+from inter import create_dataset, welcome, import_data, data_preparation, training, prediction, upload_model
 
 def main():
 
@@ -47,6 +47,8 @@ def main():
         st.session_state.current_page = "Entraînement"
     if st.sidebar.button("🔮 Prédiction"):
         st.session_state.current_page = "Prédiction"
+    if st.sidebar.button("🔮 Utiliser un modèle existant"):
+        st.session_state.current_page = "Utiliser un modèle existant"
 
     
 
@@ -62,6 +64,8 @@ def main():
         training.show()
     elif st.session_state.current_page == "Prédiction":
         prediction.show()
+    elif st.session_state.current_page == "Utiliser un modèle existant":
+        upload_model.show()
 
 
 
