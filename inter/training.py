@@ -57,11 +57,13 @@ def preprocess_data(df):
 def encode_data(df):
     """Encode categorical variables"""
     categorical_cols = df.select_dtypes(include=['object']).columns
-
+    
+    encoders = {}
     le = LabelEncoder()
     for col in categorical_cols:
-        df[col] = le.fit_transform(df[col])
-    return df
+        encoders[col] = LabelEncoder()
+        df[col] = encoders[col].fit_transform(df[col])
+    return df, encoders
 
 def check_class_distribution(y):
     value_counts = y.value_counts()
@@ -149,7 +151,7 @@ def show():
     
 
     if 'encoded_dataset' not in st.session_state or st.session_state.dataset is not st.session_state.encoded_dataset:
-        st.session_state.encoded_dataset = encode_data(st.session_state.dataset.copy())
+        st.session_state.encoded_dataset, st.session_state.encoders = encode_data(st.session_state.dataset.copy())
 
 
     if st.button("Prétraitement automatique des données"):
@@ -264,6 +266,8 @@ def show():
                     le.fit(st.session_state.dataset[target_column])
                     st.session_state.label_encoder = le
 
+                # Store encoders in session state
+                st.session_state.feature_encoders = st.session_state.encoders
 
                 st.session_state.X_train = X_train
                 st.session_state.X_test = X_test

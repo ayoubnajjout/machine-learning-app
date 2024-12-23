@@ -6,6 +6,14 @@ from sklearn.preprocessing import LabelEncoder
 import pickle
 import base64
 
+def encode_prediction_data(df, encoders):
+    """Encode prediction data using stored encoders"""
+    categorical_cols = df.select_dtypes(include=['object']).columns
+    for col in categorical_cols:
+        if col in encoders:
+            df[col] = encoders[col].transform(df[col])
+    return df
+
 def show():
     st.title("Prédiction avec le modèle entraîné")
 
@@ -46,7 +54,7 @@ def show():
             st.write("Données d'entrée pour la prédiction:", input_df)
 
 
-            input_df = encode_data(input_df)
+            input_df = encode_prediction_data(input_df, st.session_state.feature_encoders)
             st.write("Données encodées pour la prédiction:", input_df)
 
 
@@ -74,8 +82,9 @@ def show():
                 'columns': st.session_state.dataset.columns.tolist(),
                 'target_column': target_column,
                 'problem_type': problem_type,
-                'dataset': st.session_state.dataset.to_dict(),
-                'label_encoder': le 
+                'feature_encoders': st.session_state.feature_encoders,
+                'label_encoder': le,
+                'dataset_sample': st.session_state.dataset.head().to_dict()
             }
             with open(f"{model_name}.pkl", "wb") as f:
                 pickle.dump(data, f)
