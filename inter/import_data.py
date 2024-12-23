@@ -299,3 +299,68 @@ def display_dataset_info():
         except Exception as e:
             st.error(f"Erreur lors de la vérification de l'équilibre : {e}")
 
+    st.subheader("Visualisations avancées")
+    
+    # Violin Plot
+    if len(numeric_columns) > 0:
+        st.write("### Violin Plot")
+        violin_col = st.selectbox("Sélectionnez une colonne pour le violin plot:", numeric_columns)
+        if st.button("Afficher le Violin Plot"):
+            try:
+                fig, ax = plt.subplots(figsize=(10, 6))
+                sns.violinplot(data=dataset, y=violin_col)
+                plt.title(f"Violin Plot pour {violin_col}")
+                st.pyplot(fig)
+            except Exception as e:
+                st.error(f"Erreur lors de la création du violin plot : {e}")
+
+    # Pair Plot
+    if len(numeric_columns) >= 2:
+        st.write("### Pair Plot")
+        pair_cols = st.multiselect(
+            "Sélectionnez les colonnes pour le pair plot (2-5 colonnes recommandées):",
+            numeric_columns,
+            max_selections=5
+        )
+        if len(pair_cols) >= 2 and st.button("Afficher le Pair Plot"):
+            try:
+                fig = sns.pairplot(dataset[pair_cols])
+                st.pyplot(fig)
+            except Exception as e:
+                st.error(f"Erreur lors de la création du pair plot : {e}")
+
+    # Joint Plot
+    if len(numeric_columns) >= 2:
+        st.write("### Joint Plot")
+        col1_joint = st.selectbox("Première variable pour le joint plot:", numeric_columns)
+        col2_joint = st.selectbox("Deuxième variable pour le joint plot:", 
+                                [col for col in numeric_columns if col != col1_joint])
+        kind = st.selectbox("Type de joint plot:", ["scatter", "kde", "hex"])
+        
+        if st.button("Afficher le Joint Plot"):
+            try:
+                fig = sns.jointplot(
+                    data=dataset,
+                    x=col1_joint,
+                    y=col2_joint,
+                    kind=kind,
+                    height=8
+                )
+                st.pyplot(fig)
+            except Exception as e:
+                st.error(f"Erreur lors de la création du joint plot : {e}")
+
+    # Faceted Histogram
+    if len(numeric_columns) > 0 and len(categorical_columns) > 0:
+        st.write("### Histogramme facetté")
+        num_col = st.selectbox("Variable numérique:", numeric_columns)
+        cat_col = st.selectbox("Variable catégorielle pour le facetting:", categorical_columns)
+        
+        if st.button("Afficher l'histogramme facetté"):
+            try:
+                g = sns.FacetGrid(dataset, col=cat_col, col_wrap=3)
+                g.map(plt.hist, num_col, bins=20)
+                st.pyplot(g.fig)
+            except Exception as e:
+                st.error(f"Erreur lors de la création de l'histogramme facetté : {e}")
+
