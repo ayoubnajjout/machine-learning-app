@@ -29,7 +29,7 @@ def show():
         try:
 
             if uploaded_file.name.endswith(".csv"):
-                df = pd.read_csv(uploaded_file, header=None)
+                df = pd.read_csv(uploaded_file, header=0 if not target_column_option else None)
                 if target_column_option:
                     columns = df.iloc[0].tolist()
                     st.session_state["dataset"] = df[1:].reset_index(drop=True)
@@ -37,7 +37,7 @@ def show():
                 else:
                     st.session_state["dataset"] = df
             elif uploaded_file.name.endswith(".xlsx"):
-                df = pd.read_excel(uploaded_file, header=None)
+                df = pd.read_excel(uploaded_file, header=0 if not target_column_option else None)
                 if target_column_option:
                     columns = df.iloc[0].tolist()
                     st.session_state["dataset"] = df[1:].reset_index(drop=True)
@@ -48,6 +48,7 @@ def show():
                 st.session_state["dataset"] = pd.read_json(uploaded_file)
 
 
+
             st.session_state["original_dataset"] = st.session_state["dataset"].copy()
             st.session_state["temp_dataset"] = st.session_state["dataset"].copy()
             st.session_state["preprocessed_dataset"] = None  
@@ -56,6 +57,8 @@ def show():
         except Exception as e:
             st.error(f"Erreur lors de la lecture du fichier : {e}")
             st.session_state["dataset"] = None
+        st.session_state["dataset"] = st.session_state["dataset"].apply(pd.to_numeric, errors='ignore')
+
 
 
     if st.button("Réinitialiser le dataset"):
