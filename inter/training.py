@@ -11,6 +11,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
 
 from sklearn.linear_model import LinearRegression, Ridge, Lasso
 from sklearn.ensemble import RandomForestRegressor
@@ -125,7 +126,8 @@ def get_models(problem_type):
             "Random Forest": RandomForestClassifier(),
             "KNN": KNeighborsClassifier(),
             "AdaBoost": AdaBoostClassifier(),
-            "Gradient Boosting": GradientBoostingClassifier()
+            "Gradient Boosting": GradientBoostingClassifier(),
+            "Naive Bayes": GaussianNB()
         }
     else:  
         return {
