@@ -24,13 +24,17 @@ def show():
     problem_type = st.session_state.problem_type
     target_column = st.session_state.target_column
 
+    if 'label_encoder' in st.session_state:
+        le = st.session_state.label_encoder
+    else:
+        le = None
 
     st.subheader("Entrée des données pour la prédiction")
     input_data = {}
     for col in st.session_state.dataset.columns:
         if col != target_column:
-            if st.session_state.dataset[col].dtype == 'object':
-                unique_values = st.session_state.dataset[col].unique()
+            unique_values = st.session_state.dataset[col].unique()
+            if st.session_state.dataset[col].dtype == 'object' or len(unique_values) <= 10:
                 st.write(f"Valeurs possibles pour {col} : {unique_values}")
             input_data[col] = st.text_input(f"Valeur pour {col}")
 
@@ -39,19 +43,22 @@ def show():
         try:
 
             input_df = pd.DataFrame([input_data])
+            st.write("Données d'entrée pour la prédiction:", input_df)
 
 
             input_df = encode_data(input_df)
+            st.write("Données encodées pour la prédiction:", input_df)
 
 
             prediction = model.predict(input_df)
+            st.write("Résultat brut de la prédiction:", prediction)
 
             if problem_type == "classification":
-
-                le = LabelEncoder()
-                le.fit(st.session_state.dataset[target_column])
-                predicted_class = le.inverse_transform(prediction)
-                st.success(f"Classe prédite : {predicted_class[0]}")
+                if le:
+                    predicted_class = le.inverse_transform(prediction)
+                    st.success(f"Classe prédite : {predicted_class[0]}")
+                else:
+                    st.success(f"Classe prédite : {prediction[0]}")
             else:
                 st.success(f"Valeur prédite : {prediction[0]}")
 
@@ -67,7 +74,8 @@ def show():
                 'columns': st.session_state.dataset.columns.tolist(),
                 'target_column': target_column,
                 'problem_type': problem_type,
-                'dataset': st.session_state.dataset.to_dict()
+                'dataset': st.session_state.dataset.to_dict(),
+                'label_encoder': le 
             }
             with open(f"{model_name}.pkl", "wb") as f:
                 pickle.dump(data, f)

@@ -259,6 +259,11 @@ def show():
                 st.session_state.trained_model = model
                 st.session_state.target_column = target_column
 
+                if problem_type == "classification":
+                    le = LabelEncoder()
+                    le.fit(st.session_state.dataset[target_column])
+                    st.session_state.label_encoder = le
+
 
                 st.session_state.X_train = X_train
                 st.session_state.X_test = X_test

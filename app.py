@@ -47,7 +47,7 @@ def main():
         st.session_state.current_page = "Entraînement"
     if st.sidebar.button("🔮 Prédiction"):
         st.session_state.current_page = "Prédiction"
-    if st.sidebar.button("🔮 Utiliser un modèle existant"):
+    if st.sidebar.button("📂 Utiliser un modèle existant"):
         st.session_state.current_page = "Utiliser un modèle existant"
 
     

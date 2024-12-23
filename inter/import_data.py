@@ -54,10 +54,28 @@ def show():
             st.session_state["preprocessed_dataset"] = None  
             st.session_state["training_dataset"] = st.session_state["dataset"].copy()  
 
+            st.session_state["dataset"] = st.session_state["dataset"].apply(pd.to_numeric, errors='ignore')
+
+            for col in st.session_state["dataset"].columns:
+                if st.session_state["dataset"][col].dtype == 'object':
+                    try:
+                        st.session_state["dataset"][col] = pd.to_numeric(st.session_state["dataset"][col])
+                    except ValueError:
+                        pass
+
+            for key in ["original_dataset", "temp_dataset", "training_dataset"]:
+                if st.session_state[key] is not None:
+                    st.session_state[key] = st.session_state[key].apply(pd.to_numeric, errors='ignore')
+                    for col in st.session_state[key].columns:
+                        if st.session_state[key][col].dtype == 'object':
+                            try:
+                                st.session_state[key][col] = pd.to_numeric(st.session_state[key][col])
+                            except ValueError:
+                                pass
+
         except Exception as e:
             st.error(f"Erreur lors de la lecture du fichier : {e}")
             st.session_state["dataset"] = None
-        st.session_state["dataset"] = st.session_state["dataset"].apply(pd.to_numeric, errors='ignore')
 
 
 
@@ -92,6 +110,11 @@ def display_dataset_info():
 
     categorical_columns = list(dataset.select_dtypes(include=["object", "category"]).columns)
     numeric_columns = list(dataset.select_dtypes(include=["number"]).columns)
+
+    binary_columns = [col for col in numeric_columns if dataset[col].dropna().unique().tolist() in ([0, 1], [1, 0])]
+    categorical_columns.extend(binary_columns)
+    numeric_columns = [col for col in numeric_columns if col not in binary_columns]
+
     st.write(f"**Colonnes catégoriques :** {categorical_columns}")
     st.write(f"**Colonnes numériques :** {numeric_columns}")
 
