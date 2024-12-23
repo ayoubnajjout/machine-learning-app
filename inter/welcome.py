@@ -52,30 +52,28 @@ def show():
     """)
     
 
-    video_url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ" 
-    st.video(video_url)
+    video_path = "assets/demo.mkv" 
+    st.video(video_path)
 
 
-    st.header("Téléchargez la documentation complète")
+    st.header("Téléchargez le rapport de projet complet")
     st.write("""
-    Pour en savoir plus, téléchargez la documentation PDF détaillée de la plateforme. Ce guide contient des informations sur 
+    Pour en savoir plus, téléchargez le rapport PDF détaillé du projet. Ce guide contient des informations sur 
     l'utilisation de chaque fonctionnalité, les modèles de machine learning disponibles, et des conseils pour obtenir les meilleurs 
     résultats.
     """)
-    
 
-    with open("assets/documentation.pdf", "rb") as pdf_file:
+    with open("assets/Rapport Mini Projet Python.pdf", "rb") as pdf_file:
         st.download_button(
-            label="Télécharger la documentation PDF",
+            label="Télécharger le rapport de projet PDF",
             data=pdf_file,
-            file_name="documentation_machine_learning.pdf",
+            file_name="rapport_projet_machine_learning.pdf",
             mime="application/pdf"
         )
 
-
-    st.header("Contact et support")
-    st.write("""
-    Si vous avez des questions ou des problèmes, notre équipe est là pour vous aider. N'hésitez pas à nous contacter :
-    **support@mlplatform.com**.
-    Nous nous ferons un plaisir de vous accompagner dans vos projets de machine learning.
-    """)
+        st.header("À propos des créateurs")
+        st.write("""
+        Cette plateforme a été créée par Najjout Ayoub et Wafik Reda. Nous sommes passionnés par le machine learning et avons pour objectif 
+        de rendre cette technologie accessible à tous.
+        Nous espérons que vous trouverez cette plateforme utile et facile à utiliser pour vos projets de machine learning.
+        """)
