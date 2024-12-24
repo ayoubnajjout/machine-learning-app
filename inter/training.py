@@ -198,32 +198,32 @@ def show():
             st.info(f"Type de problème détecté: {problem_type.title()}")
 
             if problem_type == "classification":
-                
                 fig, class_counts = check_class_distribution(y)
                 st.pyplot(fig)
-
 
                 class_distribution = Counter(y)
                 min_samples = min(class_distribution.values())
                 max_samples = max(class_distribution.values())
                 
                 if max_samples / min_samples > 1.5:
-                    st.warning("Données déséquilibrées détectées...")
-                    resampling_method = st.selectbox(
-                        "Choisissez une méthode de rééquilibrage:",
-                        ['auto', 'random_over', 'random_under'],
-                        format_func=lambda x: {
-                            'auto': 'Automatique',
-                            'random_over': 'Sur-échantillonnage aléatoire',
-                            'random_under': 'Sous-échantillonnage aléatoire'
-                        }[x]
-                    )
-                    X_resampled, y_resampled, message = balance_data(X, y, resampling_method)
-                    if X_resampled is not None:
-                        X, y = X_resampled, y_resampled
-                        fig_new, _ = check_class_distribution(pd.Series(y_resampled))
-                        st.pyplot(fig_new)
-                        st.success(f"Données rééquilibrées avec succès! {message}")
+                    st.warning("Données déséquilibrées détectées. Voulez-vous rééquilibrer les données?")
+                    
+                    if st.checkbox("Rééquilibrer les données"):
+                        resampling_method = st.selectbox(
+                            "Choisissez une méthode de rééquilibrage:",
+                            ['auto', 'random_over', 'random_under'],
+                            format_func=lambda x: {
+                                'auto': 'Automatique',
+                                'random_over': 'Sur-échantillonnage aléatoire',
+                                'random_under': 'Sous-échantillonnage aléatoire'
+                            }[x]
+                        )
+                        X_resampled, y_resampled, message = balance_data(X, y, resampling_method)
+                        if X_resampled is not None:
+                            X, y = X_resampled, y_resampled
+                            fig_new, _ = check_class_distribution(pd.Series(y_resampled))
+                            st.pyplot(fig_new)
+                            st.success(f"Données rééquilibrées avec succès! {message}")
 
 
             test_size = st.slider(
@@ -334,6 +334,12 @@ def show():
             X = st.session_state.encoded_dataset
             kmeans = KMeans(n_clusters=num_clusters, random_state=42)
             kmeans.fit(X)
+            
+            st.session_state.trained_model = kmeans
+            st.session_state.problem_type = "clustering"
+            st.session_state.num_clusters = num_clusters
+            st.session_state.feature_encoders = st.session_state.encoders
+            
             st.session_state.encoded_dataset['Cluster'] = kmeans.labels_
             st.success(f"KMeans clustering appliqué avec {num_clusters} clusters.")
             

@@ -17,58 +17,62 @@ def encode_prediction_data(df, encoders):
 def show():
     st.title("Prédiction avec le modèle entraîné")
 
-
     if 'trained_model' not in st.session_state or st.session_state.trained_model is None:
         st.warning("Veuillez entraîner un modèle dans l'onglet Entraînement avant de faire des prédictions.")
         return
-
 
     if 'dataset' not in st.session_state or st.session_state.dataset is None:
         st.warning("Veuillez importer et préparer vos données avant de faire des prédictions.")
         return
 
-
     model = st.session_state.trained_model
     problem_type = st.session_state.problem_type
-    target_column = st.session_state.target_column
-
-    if 'label_encoder' in st.session_state:
-        le = st.session_state.label_encoder
-    else:
-        le = None
 
     st.subheader("Entrée des données pour la prédiction")
     input_data = {}
-    for col in st.session_state.dataset.columns:
-        if col != target_column:
-            unique_values = st.session_state.dataset[col].unique()
-            if st.session_state.dataset[col].dtype == 'object' or len(unique_values) <= 10:
-                st.write(f"Valeurs possibles pour {col} : {unique_values}")
-            input_data[col] = st.text_input(f"Valeur pour {col}")
+
+    if problem_type == "clustering":
+        # For clustering, we need all features except the Cluster column
+        columns_to_use = [col for col in st.session_state.dataset.columns if col != 'Cluster']
+    else:
+        # For supervised learning, exclude target column
+        target_column = st.session_state.target_column
+        columns_to_use = [col for col in st.session_state.dataset.columns if col != target_column]
+
+    for col in columns_to_use:
+        unique_values = st.session_state.dataset[col].unique()
+        if st.session_state.dataset[col].dtype == 'object' or len(unique_values) <= 10:
+            st.write(f"Valeurs possibles pour {col} : {unique_values}")
+        input_data[col] = st.text_input(f"Valeur pour {col}")
 
     if st.button("Faire une prédiction"):
-
         try:
-
             input_df = pd.DataFrame([input_data])
             st.write("Données d'entrée pour la prédiction:", input_df)
-
 
             input_df = encode_prediction_data(input_df, st.session_state.feature_encoders)
             st.write("Données encodées pour la prédiction:", input_df)
 
-
-            prediction = model.predict(input_df)
-            st.write("Résultat brut de la prédiction:", prediction)
-
-            if problem_type == "classification":
-                if le:
-                    predicted_class = le.inverse_transform(prediction)
-                    st.success(f"Classe prédite : {predicted_class[0]}")
-                else:
-                    st.success(f"Classe prédite : {prediction[0]}")
+            if problem_type == "clustering":
+                cluster = model.predict(input_df)[0]
+                st.success(f"Cluster prédit : {cluster}")
+                
+                # Calculate distance to cluster center
+                distances = model.transform(input_df)[0]
+                st.write("Distance aux centres des clusters:")
+                for i, distance in enumerate(distances):
+                    st.write(f"Cluster {i}: {distance:.2f}")
             else:
-                st.success(f"Valeur prédite : {prediction[0]}")
+                # Existing classification/regression prediction code
+                prediction = model.predict(input_df)
+                if problem_type == "classification":
+                    if 'label_encoder' in st.session_state:
+                        predicted_class = st.session_state.label_encoder.inverse_transform(prediction)
+                        st.success(f"Classe prédite : {predicted_class[0]}")
+                    else:
+                        st.success(f"Classe prédite : {prediction[0]}")
+                else:
+                    st.success(f"Valeur prédite : {prediction[0]}")
 
         except Exception as e:
             st.error(f"Erreur lors de la prédiction : {str(e)}")
@@ -80,12 +84,23 @@ def show():
             data = {
                 'model': model,
                 'columns': st.session_state.dataset.columns.tolist(),
-                'target_column': target_column,
                 'problem_type': problem_type,
                 'feature_encoders': st.session_state.feature_encoders,
-                'label_encoder': le,
-                'dataset_sample': st.session_state.dataset.head().to_dict()
             }
+            
+            if problem_type == "clustering":
+                data.update({
+                    'num_clusters': st.session_state.num_clusters,
+                    'cluster_centers': model.cluster_centers_
+                })
+            else:
+                data.update({
+                    'target_column': st.session_state.target_column,
+                    'label_encoder': st.session_state.label_encoder if 'label_encoder' in st.session_state else None,
+                })
+            
+            data['dataset_sample'] = st.session_state.dataset.head().to_dict()
+            
             with open(f"{model_name}.pkl", "wb") as f:
                 pickle.dump(data, f)
             st.success(f"Modèle exporté sous le nom : {model_name}.pkl")

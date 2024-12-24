@@ -1,3 +1,4 @@
+from matplotlib import pyplot as plt
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -21,40 +22,63 @@ def show():
             data = pickle.load(uploaded_model)
             model = data['model']
             columns = data['columns']
-            target_column = data['target_column']
             problem_type = data['problem_type']
             feature_encoders = data.get('feature_encoders', {})
-            label_encoder = data.get('label_encoder')
-            dataset_sample = pd.DataFrame(data['dataset_sample'])
-            st.success("Modèle chargé avec succès.")
             
+            if problem_type == "clustering":
+                num_clusters = data.get('num_clusters')
+                cluster_centers = data.get('cluster_centers')
+                st.success(f"Modèle de clustering chargé avec succès. ({num_clusters} clusters)")
+                
+                st.subheader("Centres des clusters")
+                centers_df = pd.DataFrame(cluster_centers, 
+                                        columns=columns,
+                                        index=[f"Cluster {i}" for i in range(num_clusters)])
+                st.dataframe(centers_df)
+            else:
+                target_column = data['target_column']
+                label_encoder = data.get('label_encoder')
+                st.success("Modèle supervisé chargé avec succès.")
+            
+            dataset_sample = pd.DataFrame(data['dataset_sample'])
             st.write("Modèle prêt à être utilisé pour les prédictions.")
             
             st.subheader("Entrée des données pour la prédiction")
             input_data = {}
-            for col in columns:
-                if col != target_column:
-                    if col in dataset_sample and dataset_sample[col].dtype == 'object':
-                        unique_values = dataset_sample[col].unique()
-                        st.write(f"Valeurs possibles pour {col} : {unique_values}")
-                    input_data[col] = st.text_input(f"Valeur pour {col}")
+            
+            # Determine which columns to use based on problem type
+            if problem_type == "clustering":
+                columns_to_use = columns
+            else:
+                columns_to_use = [col for col in columns if col != target_column]
+            
+            for col in columns_to_use:
+                if col in dataset_sample and dataset_sample[col].dtype == 'object':
+                    unique_values = dataset_sample[col].unique()
+                    st.write(f"Valeurs possibles pour {col} : {unique_values}")
+                input_data[col] = st.text_input(f"Valeur pour {col}")
 
             if st.button("Faire une prédiction"):
                 try:
                     input_df = pd.DataFrame([input_data])
-                    
-                    # Use stored encoders for consistent encoding
                     input_df = encode_prediction_data(input_df, feature_encoders)
-                    prediction = model.predict(input_df)
-
-                    if problem_type == "classification" and label_encoder:
-                        predicted_class = label_encoder.inverse_transform(prediction)
-                        st.success(f"Classe prédite : {predicted_class[0]}")
+                    
+                    if problem_type == "clustering":
+                        cluster = model.predict(input_df)[0]
+                        st.success(f"Cluster prédit : {cluster}")
+                        
                     else:
-                        st.success(f"Valeur prédite : {prediction[0]}")
+                        prediction = model.predict(input_df)
+                        if problem_type == "classification" and label_encoder:
+                            predicted_class = label_encoder.inverse_transform(prediction)
+                            st.success(f"Classe prédite : {predicted_class[0]}")
+                        else:
+                            st.success(f"Valeur prédite : {prediction[0]}")
+                            
                 except Exception as e:
                     st.error(f"Erreur lors de la prédiction : {str(e)}")
                     st.write("Données d'entrée :", input_df)
+                    
         except Exception as e:
             st.error(f"Erreur lors du chargement du modèle : {str(e)}")
     else:
