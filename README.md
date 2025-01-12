@@ -19,21 +19,27 @@ que le système propose pour répondre aux besoins des utilisateurs.
 ## Fonctionnalités
 
 - **Importer des données** : Téléchargez vos propres fichiers CSV, Excel ou JSON pour commencer à travailler.
+  
   ![Importer des données](assets/import_data_1.PNG)
 
 - **Préparer les données** : Nettoyez et transformez vos données pour les rendre prêtes à l'emploi.
+  
   ![Préparer les données](assets/data_processing_1.PNG)
 
 - **Entraîner des modèles** : Choisissez parmi plusieurs modèles populaires de machine learning pour entraîner votre propre modèle.
+  
   ![Entraîner des modèles](assets/training_1.PNG)
 
 - **Tester et évaluer les résultats** : Testez les performances de votre modèle sur un jeu de données de test et comprenez ses résultats.
+  
   ![Tester et évaluer les résultats](assets/training_2.PNG)
 
 - **Exporter et importer des modèles** : Sauvegardez vos modèles pour une utilisation future ou chargez des modèles existants pour les utiliser directement.
+  
   ![Exporter et importer des modèles](assets/use_pretrained_model.PNG)
 
 - **Prédiction** : Utilisez le modèle entraîné pour effectuer des prédictions sur de nouvelles données.
+  
   ![Prédiction](assets/prediction_1.png)
 
 ## Installation
