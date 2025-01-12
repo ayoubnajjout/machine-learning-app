@@ -14,24 +14,24 @@ ce que le système fait plutôt que sur comment il le fait. En résumé, un diag
 d'utilisation décrit les interactions entre les acteurs et le système, ainsi que les fonctionnalités
 que le système propose pour répondre aux besoins des utilisateurs.
 
-![Use Case diagram](assets/use_cases_diagram.png)
+![Use Case diagram](assets/use_cases_diagram.PNG)
 
 ## Fonctionnalités
 
 - **Importer des données** : Téléchargez vos propres fichiers CSV, Excel ou JSON pour commencer à travailler.
-  ![Importer des données](assets/import_data_1.png)
+  ![Importer des données](assets/import_data_1.PNG)
 
 - **Préparer les données** : Nettoyez et transformez vos données pour les rendre prêtes à l'emploi.
-  ![Préparer les données](assets/data_processing_1.png)
+  ![Préparer les données](assets/data_processing_1.PNG)
 
 - **Entraîner des modèles** : Choisissez parmi plusieurs modèles populaires de machine learning pour entraîner votre propre modèle.
-  ![Entraîner des modèles](assets/training_1.png)
+  ![Entraîner des modèles](assets/training_1.PNG)
 
 - **Tester et évaluer les résultats** : Testez les performances de votre modèle sur un jeu de données de test et comprenez ses résultats.
-  ![Tester et évaluer les résultats](assets/training_2.png)
+  ![Tester et évaluer les résultats](assets/training_2.PNG)
 
 - **Exporter et importer des modèles** : Sauvegardez vos modèles pour une utilisation future ou chargez des modèles existants pour les utiliser directement.
-  ![Exporter et importer des modèles](assets/use_pretrained_model.png)
+  ![Exporter et importer des modèles](assets/use_pretrained_model.PNG)
 
 - **Prédiction** : Utilisez le modèle entraîné pour effectuer des prédictions sur de nouvelles données.
   ![Prédiction](assets/prediction_1.png)
@@ -62,47 +62,47 @@ L'application est divisée en plusieurs sections accessibles via la barre latér
 
 - **Bienvenue** : Introduction à la plateforme et ses fonctionnalités.
 
-![Bienvenue](assets/home.png)
+![Bienvenue](assets/home.PNG)
 
 - **Création de dataset** : Créez un nouveau dataset en spécifiant le nombre de lignes et de colonnes.
 
-![Création de dataset](assets/creation_data.png)
+![Création de dataset](assets/creation_data.PNG)
 
 - **Importer les données** : Importez vos propres fichiers de données.
 
-![Importer les données](assets/import_data_1.png)
+![Importer les données](assets/import_data_1.PNG)
 
-![Importer les données](assets/import_data_2.png)
+![Importer les données](assets/import_data_2.PNG)
 
-![Importer les données](assets/import_data_3.png)
+![Importer les données](assets/import_data_3.PNG)
 
 - **Préparation des données** : Nettoyez, normalisez, encodez et gérez les outliers dans vos données.
 
-![Préparation des données](assets/data_processing_1.png)
+![Préparation des données](assets/data_processing_1.PNG)
 
-![Préparation des données](assets/data_processing_2.png)
+![Préparation des données](assets/data_processing_2.PNG)
 
-![Préparation des données](assets/data_processing_3.png)
+![Préparation des données](assets/data_processing_3.PNG)
 
 - **Entraînement** : Entraînez des modèles de machine learning sur vos données.
 
-![Entraînement](assets/training_1.png)
+![Entraînement](assets/training_1.PNG)
 
-![Entraînement](assets/training_2.png)
+![Entraînement](assets/training_2.PNG)
 
-![Entraînement](assets/training_3.png)
+![Entraînement](assets/training_3.PNG)
 
 - **Prédiction** : Utilisez le modèle entraîné pour faire des prédictions.
 
-![Prédiction](assets/prediction_1.png)
+![Prédiction](assets/prediction_1.PNG)
 
-![Prédiction](assets/prediction_2.png)
+![Prédiction](assets/prediction_2.PNG)
 
 - **Utiliser un modèle existant** : Chargez et utilisez un modèle existant pour faire des prédictions.
 
-![Utiliser un modèle existant](assets/use_pretrained_model.png)
+![Utiliser un modèle existant](assets/use_pretrained_model.PNG)
 
-![Utiliser un modèle existant](assets/predict_pretrained_model.png)
+![Utiliser un modèle existant](assets/predict_pretrained_model.PNG)
 
 ### Préparation des Données
 
