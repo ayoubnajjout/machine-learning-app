@@ -2,14 +2,39 @@
 
 Bienvenue sur votre plateforme de Machine Learning facile à utiliser. Cette application interactive permet à toute personne, qu'elle soit novice ou expérimentée en data science, de développer et d'appliquer des modèles de machine learning sur leurs propres données, sans nécessiter de compétences en programmation.
 
+Cette plateforme est conçue pour simplifier le processus de création de modèles de machine learning, de la préparation des données à la prédiction, en passant par l'entraînement et l'évaluation des modèles. Elle offre une interface utilisateur intuitive et des outils puissants pour vous aider à tirer le meilleur parti de vos données.
+
+## Diagramme Use Cases
+
+Un diagramme de cas d'utilisation est une représentation graphique dans le domaine de
+l'ingénierie logicielle qui illustre les interactions entre les acteurs externes (utilisateurs ou
+systèmes externes) et un système logiciel donné. Il met en évidence les différentes actions ou
+fonctionnalités offertes par le système du point de vue de l'utilisateur, en se concentrant sur
+ce que le système fait plutôt que sur comment il le fait. En résumé, un diagramme de cas
+d'utilisation décrit les interactions entre les acteurs et le système, ainsi que les fonctionnalités
+que le système propose pour répondre aux besoins des utilisateurs.
+
+![Use Case diagram](assets/use_cases_diagram.png)
+
 ## Fonctionnalités
 
 - **Importer des données** : Téléchargez vos propres fichiers CSV, Excel ou JSON pour commencer à travailler.
+  ![Importer des données](assets/import_data_1.png)
+
 - **Préparer les données** : Nettoyez et transformez vos données pour les rendre prêtes à l'emploi.
+  ![Préparer les données](assets/data_processing_1.png)
+
 - **Entraîner des modèles** : Choisissez parmi plusieurs modèles populaires de machine learning pour entraîner votre propre modèle.
+  ![Entraîner des modèles](assets/training_1.png)
+
 - **Tester et évaluer les résultats** : Testez les performances de votre modèle sur un jeu de données de test et comprenez ses résultats.
+  ![Tester et évaluer les résultats](assets/training_2.png)
+
 - **Exporter et importer des modèles** : Sauvegardez vos modèles pour une utilisation future ou chargez des modèles existants pour les utiliser directement.
+  ![Exporter et importer des modèles](assets/use_pretrained_model.png)
+
 - **Prédiction** : Utilisez le modèle entraîné pour effectuer des prédictions sur de nouvelles données.
+  ![Prédiction](assets/prediction_1.png)
 
 ## Installation
 
@@ -36,12 +61,48 @@ Bienvenue sur votre plateforme de Machine Learning facile à utiliser. Cette app
 L'application est divisée en plusieurs sections accessibles via la barre latérale :
 
 - **Bienvenue** : Introduction à la plateforme et ses fonctionnalités.
+
+![Bienvenue](assets/home.png)
+
 - **Création de dataset** : Créez un nouveau dataset en spécifiant le nombre de lignes et de colonnes.
+
+![Création de dataset](assets/creation_data.png)
+
 - **Importer les données** : Importez vos propres fichiers de données.
+
+![Importer les données](assets/import_data_1.png)
+
+![Importer les données](assets/import_data_2.png)
+
+![Importer les données](assets/import_data_3.png)
+
 - **Préparation des données** : Nettoyez, normalisez, encodez et gérez les outliers dans vos données.
+
+![Préparation des données](assets/data_processing_1.png)
+
+![Préparation des données](assets/data_processing_2.png)
+
+![Préparation des données](assets/data_processing_3.png)
+
 - **Entraînement** : Entraînez des modèles de machine learning sur vos données.
+
+![Entraînement](assets/training_1.png)
+
+![Entraînement](assets/training_2.png)
+
+![Entraînement](assets/training_3.png)
+
 - **Prédiction** : Utilisez le modèle entraîné pour faire des prédictions.
+
+![Prédiction](assets/prediction_1.png)
+
+![Prédiction](assets/prediction_2.png)
+
 - **Utiliser un modèle existant** : Chargez et utilisez un modèle existant pour faire des prédictions.
+
+![Utiliser un modèle existant](assets/use_pretrained_model.png)
+
+![Utiliser un modèle existant](assets/predict_pretrained_model.png)
 
 ### Préparation des Données
 
