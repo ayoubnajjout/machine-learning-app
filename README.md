@@ -40,7 +40,7 @@ que le système propose pour répondre aux besoins des utilisateurs.
 
 - **Prédiction** : Utilisez le modèle entraîné pour effectuer des prédictions sur de nouvelles données.
   
-  ![Prédiction](assets/prediction_1.png)
+  ![Prédiction](assets/prediction_1.PNG)
 
 ## Installation
 
